@@ -205,3 +205,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+# Ignore uploaded images and files (optional for MVP)
+uploads/
+
+# Optional: Ignore your Docker build context if you use Docker later
+*.log
