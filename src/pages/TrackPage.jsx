@@ -1,7 +1,7 @@
 // src/pages/TrackPage.jsx
 import React, { useState } from "react";
 
-const API_BASE_URL = "http://localhost:8000"; // backend URL
+const API_BASE_URL = "https://senderplus-api.onrender.com"; // backend URL
 
 const TrackPage = () => {
   const [trackingId, setTrackingId] = useState("");
