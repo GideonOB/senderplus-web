@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const API_BASE_URL = "https://senderplus-api.onrender.com"; // later: replace with your deployed backend URL
+const API_BASE_URL = "https://senderplus-api.onrender.com";
 
 const SubmitPage = () => {
   const [formData, setFormData] = useState({
