@@ -11,7 +11,6 @@ const ConfirmCodePage = () => {
   const navigate = useNavigate();
 
   const handleChange = (index, value) => {
-    // Accept only digits/letters, take first char
     const char = value.slice(-1);
     const updated = [...digits];
     updated[index] = char;
@@ -61,14 +60,14 @@ const ConfirmCodePage = () => {
       return;
     }
 
-    // In a real app, you'd verify the code here.
-    // For demo, we just move on.
+    // Real app: verify code here.
+    // Demo: go straight to Home.
     setError("");
-    navigate("/start");
+    navigate("/home");
   };
 
   const handleSkip = () => {
-    navigate("/start");
+    navigate("/home");
   };
 
   return (
