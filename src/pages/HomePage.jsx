@@ -38,9 +38,6 @@ const HomePage = () => {
                 <div className="max-w-6xl mx-auto px-4 py-10 md:py-16 grid md:grid-cols-2 gap-10 items-center">
                     {/* Text side */}
                     <div>
-                        <p className="text-xs font-semibold tracking-[0.2em] text-[#7E191B] uppercase mb-2">
-                            Proudly Ghanaian
-                        </p>
                         <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight">
                             Campus delivery,
                             <span className="block text-[#7E191B]">
