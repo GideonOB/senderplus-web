@@ -22,7 +22,7 @@ const AuthLandingPage = () => {
                         Welcome to SenderPlus
                     </h1>
                     <p className="text-sm text-white/80 mt-1">
-                        Proudly Ghanaian. Bridging Ghana One Package at a Time.
+                        Bridging Ghana One Package at a Time.
                     </p>
                 </div>
 
