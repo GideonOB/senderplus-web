@@ -6,20 +6,20 @@ import HomePage from "./pages/HomePage";
 import SubmitPage from "./pages/SubmitPage";
 import TrackPage from "./pages/TrackPage";
 import SupportPage from "./pages/SupportPage";
+import SubmitSuccessPage from "./pages/SubmitSuccessPage"; // 👈 NEW
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Step 1: Login / Sign up / Skip */}
+        {/* Auth flow */}
         <Route path="/" element={<AuthLandingPage />} />
-
-        {/* Step 2: Confirmation code (demo) */}
         <Route path="/confirm" element={<ConfirmCodePage />} />
 
-        {/* Main app pages */}
+        {/* Main app */}
         <Route path="/home" element={<HomePage />} />
         <Route path="/submit" element={<SubmitPage />} />
+        <Route path="/submit-success" element={<SubmitSuccessPage />} /> {/* 👈 NEW */}
         <Route path="/track" element={<TrackPage />} />
         <Route path="/support" element={<SupportPage />} />
       </Routes>
