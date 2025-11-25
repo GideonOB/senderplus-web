@@ -21,7 +21,7 @@ const SupportPage = () => {
                         className="flex items-center gap-2"
                     >
                         <span className="font-bold text-[#73C2FB] text-lg">
-                            SenderPlus
+                            Sender+
                         </span>
                     </button>
                     <span className="text-xs text-gray-500">
@@ -37,7 +37,7 @@ const SupportPage = () => {
                     </h2>
                     <p className="text-sm text-gray-600 mb-4">
                         For demo purposes, these are sample support channels. In a live
-                        deployment, SenderPlus will offer WhatsApp, in-app chat, and phone
+                        deployment, Sender+ will offer WhatsApp, in-app chat, and phone
                         support for students and families.
                     </p>
 

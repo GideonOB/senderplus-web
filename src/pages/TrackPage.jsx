@@ -1,94 +1,110 @@
 // src/pages/TrackPage.jsx
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const API_BASE_URL = "https://senderplus-api.onrender.com";
+
+const STATUS_STEPS = [
+  "Waiting for package to reach bus station",
+  "Package in our van en route to campus",
+  "Package at our campus hub",
+  "Package delivered to recipient",
+];
 
 const TrackPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const initialTrackingId = location.state?.trackingId || "";
-  const fromSubmit = location.state?.fromSubmit || false;
-
-  const [trackingId, setTrackingId] = useState(initialTrackingId);
+  const [trackingIdInput, setTrackingIdInput] = useState(initialTrackingId);
   const [pkg, setPkg] = useState(null);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [advancing, setAdvancing] = useState(false);
-  const [autoTracked, setAutoTracked] = useState(false);
+  const [error, setError] = useState("");
 
-  const trackById = async (id) => {
-    if (!id.trim()) {
+  useEffect(() => {
+    if (initialTrackingId) {
+      handleFetch(initialTrackingId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTrackingId]);
+
+  const goHome = () => navigate("/home");
+
+  const handleFetch = async (id) => {
+    const trimmed = id.trim();
+    if (!trimmed) {
       setError("Please enter a tracking ID.");
+      setPkg(null);
       return;
     }
 
-    setError("");
-    setPkg(null);
     setLoading(true);
+    setError("");
     try {
-      const res = await fetch(`${API_BASE_URL}/track/${id.trim()}`);
+      const res = await fetch(`${API_BASE_URL}/track/${trimmed}`);
       if (!res.ok) {
         if (res.status === 404) {
-          throw new Error("No package found with that tracking ID.");
+          setPkg(null);
+          setError(
+            "We couldn’t find a package with that ID. Please confirm the code from the sender."
+          );
+        } else {
+          const txt = await res.text();
+          console.error("Track error:", res.status, txt);
+          throw new Error("Failed to fetch package details.");
         }
-        throw new Error("Failed to fetch package. Please try again.");
+        return;
       }
       const data = await res.json();
       setPkg(data);
     } catch (err) {
       console.error(err);
+      setPkg(null);
       setError(err.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleTrack = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    await trackById(trackingId);
+    handleFetch(trackingIdInput);
   };
 
-  // Auto-track when coming directly from Submit page
-  useEffect(() => {
-    if (fromSubmit && initialTrackingId && !autoTracked) {
-      setTrackingId(initialTrackingId);
-      (async () => {
-        await trackById(initialTrackingId);
-        setAutoTracked(true);
-      })();
-    }
-  }, [fromSubmit, initialTrackingId, autoTracked]);
-
   const handleAdvanceStatus = async () => {
-    if (!pkg) return;
-    setError("");
+    if (!pkg?.tracking_id) return;
     setAdvancing(true);
+    setError("");
     try {
       const res = await fetch(
         `${API_BASE_URL}/advance-status/${pkg.tracking_id}`,
-        { method: "POST" }
+        {
+          method: "POST",
+        }
       );
       if (!res.ok) {
-        throw new Error("Failed to advance status.");
+        const txt = await res.text();
+        console.error("Advance status error:", res.status, txt);
+        throw new Error("Could not advance package status (demo).");
       }
-      const updated = await res.json();
-      setPkg(updated);
+      const data = await res.json();
+      setPkg(data);
     } catch (err) {
       console.error(err);
-      setError(err.message || "Something went wrong while advancing status.");
+      setError(err.message || "Failed to update status.");
     } finally {
       setAdvancing(false);
     }
   };
 
-  const goHome = () => navigate("/home");
-  const goSend = () => navigate("/submit");
-  const goSupport = () => navigate("/support");
-  const goAccount = () => {
-    alert("My Account (demo) – coming soon.");
-  };
+  const currentStatusIndex =
+    pkg && STATUS_STEPS.includes(pkg.status)
+      ? STATUS_STEPS.indexOf(pkg.status)
+      : -1;
+
+  const imageUrl =
+    pkg && pkg.photo_url ? `${API_BASE_URL}${pkg.photo_url}` : null;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col pb-16">
@@ -100,169 +116,235 @@ const TrackPage = () => {
             onClick={goHome}
             className="flex items-center gap-2"
           >
-            <span className="font-bold text-[#73C2FB] text-lg">
-              SenderPlus
-            </span>
+            <img
+              src="/senderplus-logo.png"
+              alt="Sender+ logo"
+              className="h-8 w-auto"
+            />
           </button>
-          <button
-            type="button"
-            onClick={goSupport}
-            className="text-xs text-gray-500 hover:text-[#73C2FB]"
-          >
-            Customer Support
-          </button>
+          <nav className="flex gap-4 text-sm">
+            <button
+              type="button"
+              onClick={goHome}
+              className="hover:text-[#73C2FB]"
+            >
+              Home
+            </button>
+            <span className="font-semibold text-[#73C2FB]">Track</span>
+          </nav>
         </div>
       </header>
 
-      {/* Main */}
-      <main className="flex-1 flex justify-center px-4 py-8">
-        <div className="w-full max-w-xl bg-white rounded-xl shadow-md p-6 md:p-8">
-          {/* Header */}
-          <div className="text-center mb-4">
-            <h2 className="text-2xl md:text-3xl font-bold text-[#73C2FB]">
+      {/* Main content */}
+      <main className="flex-1 px-4 py-6 flex justify-center">
+        <div className="w-full max-w-4xl space-y-6">
+          {/* Search card */}
+          <div className="bg-white rounded-2xl shadow-md p-6 md:p-8">
+            <h1 className="text-2xl md:text-3xl font-bold text-[#73C2FB] mb-2">
               Track a Package
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Enter the tracking ID shared by the sender.
+            </h1>
+            <p className="text-sm md:text-base text-gray-600 mb-4">
+              Enter the tracking ID sent to the sender to check where a package
+              is in the Sender+ journey.
             </p>
+
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col md:flex-row gap-3 items-stretch md:items-center"
+            >
+              <input
+                type="text"
+                value={trackingIdInput}
+                onChange={(e) => setTrackingIdInput(e.target.value)}
+                placeholder="e.g., dbd92eb6"
+                className="flex-1 input"
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm ${loading
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-[#73C2FB] text-white hover:bg-[#61B2EB]"
+                  }`}
+              >
+                <span>🔍</span>
+                <span>{loading ? "Checking..." : "Track Package"}</span>
+              </button>
+            </form>
+
+            {error && (
+              <div className="mt-4 rounded bg-red-100 text-red-700 px-4 py-2 text-sm">
+                {error}
+              </div>
+            )}
           </div>
 
-          {/* Banner when coming from submit */}
-          {fromSubmit && initialTrackingId && (
-            <div className="mb-4 rounded bg-green-50 text-green-700 px-4 py-3 text-sm">
-              <p className="font-semibold">
-                Your package has been submitted successfully.
-              </p>
-              <p className="mt-1">
-                You can track it using this ID:{" "}
-                <span className="font-mono font-semibold bg-white px-1 rounded">
-                  {initialTrackingId}
-                </span>
-              </p>
-            </div>
-          )}
-
-          {/* Track form */}
-          <form onSubmit={handleTrack} className="space-y-4 mb-4">
-            <div>
-              <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                Tracking ID
-              </label>
-              <input
-                className="input"
-                placeholder="e.g. dbd92eb6"
-                value={trackingId}
-                onChange={(e) => setTrackingId(e.target.value)}
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className={`bg-[#73C2FB] hover:bg-[#61B2EB] text-white font-semibold px-6 py-2 rounded-lg shadow-sm transition ${loading ? "opacity-60 cursor-not-allowed" : ""
-                }`}
-            >
-              {loading ? "Checking..." : "Track Package"}
-            </button>
-          </form>
-
-          {/* Error */}
-          {error && (
-            <div className="mb-4 rounded bg-red-100 text-red-700 px-4 py-2 text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Package info */}
+          {/* Results */}
           {pkg && (
-            <div className="mt-4 space-y-4">
-              {/* Status card */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <p className="text-xs font-semibold text-gray-500 uppercase">
-                  Status
-                </p>
-                <p className="text-lg font-semibold text-[#7E191B]">
-                  {pkg.status}
-                </p>
-                <p className="mt-1 text-xs text-gray-500">
-                  Tracking ID:{" "}
-                  <span className="font-mono bg-gray-100 px-1 rounded">
-                    {pkg.tracking_id}
-                  </span>
-                </p>
-              </div>
-
-              {/* DEMO: Advance status */}
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleAdvanceStatus}
-                  disabled={advancing}
-                  className={`text-xs md:text-sm px-4 py-2 rounded-lg border border-[#73C2FB] text-[#73C2FB] hover:bg-[#73C2FB] hover:text-white transition ${advancing ? "opacity-60 cursor-not-allowed" : ""
-                    }`}
-                >
-                  {advancing ? "Updating..." : "Advance Status (demo)"}
-                </button>
-              </div>
-
-              {/* Sender & recipient */}
-              <div className="border border-gray-200 rounded-lg p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase">
-                    Sender
-                  </p>
-                  <p className="font-medium">{pkg.sender_name}</p>
-                  <p className="text-sm text-gray-600">{pkg.sender_phone}</p>
-                  <p className="text-xs text-gray-500">{pkg.sender_address}</p>
+            <div className="bg-white rounded-2xl shadow-md p-6 md:p-8 space-y-6">
+              {/* Header + status pill + demo text + button */}
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase text-gray-500 tracking-wide">
+                      Tracking ID
+                    </p>
+                    <p className="font-mono font-semibold text-sm md:text-base">
+                      {pkg.tracking_id}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-start md:items-end gap-1">
+                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-[#73C2FB]/10 text-[#73C2FB]">
+                      <span>📍</span>
+                      <span>{pkg.status}</span>
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase">
-                    Recipient
-                  </p>
-                  <p className="font-medium">{pkg.recipient_name}</p>
-                  <p className="text-sm text-gray-600">{pkg.recipient_phone}</p>
+
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                   <p className="text-xs text-gray-500">
-                    {pkg.recipient_address}
+                    Demo mode – you can step this package through each stage of
+                    the journey to show how Sender+ tracking will work.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleAdvanceStatus}
+                    disabled={advancing}
+                    className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-semibold shadow-sm ${advancing
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-[#7E191B] text-white hover:bg-[#681117]"
+                      }`}
+                  >
+                    <span>⏭</span>
+                    <span>
+                      {advancing
+                        ? "Updating status..."
+                        : "Advance Status (demo)"}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Status timeline */}
+              <div>
+                <p className="text-xs uppercase text-gray-500 tracking-wide mb-2">
+                  Journey Progress
+                </p>
+                <ol className="space-y-2">
+                  {STATUS_STEPS.map((step, index) => {
+                    const reached = index <= currentStatusIndex;
+                    return (
+                      <li
+                        key={step}
+                        className="flex items-start gap-3 text-sm"
+                      >
+                        <div
+                          className={`mt-1 w-4 h-4 rounded-full border-2 flex items-center justify-center ${reached
+                            ? "border-[#73C2FB] bg-[#73C2FB]"
+                            : "border-gray-300 bg-white"
+                            }`}
+                        >
+                          {reached && (
+                            <span className="text-[10px] text-white">✓</span>
+                          )}
+                        </div>
+                        <span
+                          className={`${reached
+                            ? "text-gray-900 font-medium"
+                            : "text-gray-400"
+                            }`}
+                        >
+                          {step}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+
+              {/* Sender/Recipient details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-800 mb-1">
+                    From (Sender)
+                  </h3>
+                  <p className="text-sm text-gray-700">
+                    {pkg.sender_name}{" "}
+                    {pkg.sender_phone && (
+                      <span className="block text-xs text-gray-500">
+                        {pkg.sender_phone}
+                      </span>
+                    )}
+                    {pkg.sender_address && (
+                      <span className="block text-xs text-gray-500">
+                        {pkg.sender_address}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-800 mb-1">
+                    To (Recipient)
+                  </h3>
+                  <p className="text-sm text-gray-700">
+                    {pkg.recipient_name}{" "}
+                    {pkg.recipient_phone && (
+                      <span className="block text-xs text-gray-500">
+                        {pkg.recipient_phone}
+                      </span>
+                    )}
+                    {pkg.recipient_address && (
+                      <span className="block text-xs text-gray-500">
+                        {pkg.recipient_address}
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
 
-              {/* Package details */}
-              <div className="border border-gray-200 rounded-lg p-4 space-y-2">
-                <p className="text-xs font-semibold text-gray-500 uppercase">
-                  Package
-                </p>
-                <p className="font-medium">
-                  {pkg.package_name}{" "}
-                  <span className="text-xs text-gray-500">
-                    ({pkg.package_type})
-                  </span>
-                </p>
-                <p className="text-sm text-gray-600">
-                  Weight: {pkg.weight} kg
-                  {pkg.value && (
-                    <>
-                      {" • "}Estimated value: GH₵ {pkg.value}
-                    </>
-                  )}
-                </p>
-                {pkg.description && (
-                  <p className="text-sm text-gray-600 mt-1">
-                    {pkg.description}
+              {/* Package metadata */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs md:text-sm text-gray-700">
+                <div>
+                  <p className="text-gray-500 text-[11px] uppercase tracking-wide">
+                    Package
                   </p>
+                  <p className="font-medium">{pkg.package_name}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-[11px] uppercase tracking-wide">
+                    Type
+                  </p>
+                  <p className="font-medium">{pkg.package_type}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-[11px] uppercase tracking-wide">
+                    Weight
+                  </p>
+                  <p className="font-medium">{pkg.weight} kg</p>
+                </div>
+                {pkg.value !== null && (
+                  <div>
+                    <p className="text-gray-500 text-[11px] uppercase tracking-wide">
+                      Value (est.)
+                    </p>
+                    <p className="font-medium">{pkg.value}</p>
+                  </div>
                 )}
               </div>
 
-              {/* Photo */}
-              {pkg.photo_url && (
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+              {/* Package photo (if provided) */}
+              {imageUrl && (
+                <div className="mt-4">
+                  <p className="text-xs uppercase text-gray-500 tracking-wide mb-2">
                     Package Photo
                   </p>
-                  <img
-                    src={`${API_BASE_URL}${pkg.photo_url}`}
-                    alt="Package"
-                    className="w-full max-h-64 object-cover rounded-lg border"
-                  />
+                  <div className="w-full max-w-md">
+                    <img
+                      src={imageUrl}
+                      alt="Uploaded package"
+                      className="w-full rounded-xl border border-gray-200 object-cover max-h-64"
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -270,7 +352,7 @@ const TrackPage = () => {
         </div>
       </main>
 
-      {/* Bottom navigation bar */}
+      {/* Bottom nav */}
       <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 shadow-sm">
         <div className="max-w-md mx-auto flex justify-around py-2">
           {/* Home */}
@@ -283,20 +365,18 @@ const TrackPage = () => {
             <span>Home</span>
           </button>
 
-          {/* Track - active */}
-          <button
-            type="button"
-            onClick={() => { }}
-            className="flex flex-col items-center text-xs font-medium text-[#73C2FB]"
-          >
+          {/* Track (active) */}
+          <div className="flex flex-col items-center text-xs font-semibold text-[#73C2FB]">
             <span className="text-lg">🔍</span>
             <span>Track</span>
-          </button>
+          </div>
 
-          {/* My Account */}
+          {/* My Account placeholder */}
           <button
             type="button"
-            onClick={goAccount}
+            onClick={() =>
+              alert("My Account (demo) – authentication coming soon.")
+            }
             className="flex flex-col items-center text-xs font-medium text-gray-500 hover:text-[#73C2FB]"
           >
             <span className="text-lg">👤</span>

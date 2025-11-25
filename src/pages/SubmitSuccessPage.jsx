@@ -29,7 +29,7 @@ const SubmitSuccessPage = () => {
                         className="flex items-center gap-2"
                     >
                         <span className="font-bold text-[#73C2FB] text-lg">
-                            SenderPlus
+                            Sender+
                         </span>
                     </button>
                 </div>
@@ -64,7 +64,7 @@ const SubmitSuccessPage = () => {
                     )}
 
                     <p className="text-xs md:text-sm text-gray-500 mb-6">
-                        In a full production version of SenderPlus, you would also receive
+                        In a full production version of Sender+, you would also receive
                         an email confirmation and updates using this tracking code.
                     </p>
 

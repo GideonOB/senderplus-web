@@ -26,7 +26,7 @@ const HomePage = () => {
                     >
                         <img
                             src="/senderplus-logo.png"
-                            alt="SenderPlus logo"
+                            alt="Sender+ logo"
                             className="h-8"
                         />
                     </button>
@@ -39,16 +39,20 @@ const HomePage = () => {
                     {/* Text side */}
                     <div>
                         <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight">
-                            Campus delivery,
+                            Stress-free campus delivery
                             <span className="block text-[#7E191B]">
-                                reimagined for students.
+                                reimagined for students
                             </span>
                         </h1>
 
-                        <p className="mt-4 text-sm md:text-base text-gray-600 max-w-md">
-                            SenderPlus makes it easy for families and friends to send
-                            packages to students at the University of Ghana and the Kwame Nkrumah University of Science and Technology — without the long trips to crowded bus stations.
+                        <p className="text-sm md:text-base text-gray-600 max-w-xl">
+                            Sender+ is the stress-free solution to campus package delivery.
+                            We make sending and receiving packages simple for students at the
+                            University of Ghana and KNUST. Say goodbye to the time, cost, and
+                            stress of traveling to crowded bus stations so you can focus on
+                            your studies.
                         </p>
+
 
                         {/* Main action buttons */}
                         <div className="mt-6 flex flex-wrap gap-3">

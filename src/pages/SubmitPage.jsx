@@ -4,6 +4,17 @@ import { useNavigate } from "react-router-dom";
 
 const API_BASE_URL = "https://senderplus-api.onrender.com"; // backend URL
 
+// Helper: format phone as (000) 000-0000 and strip non-digits
+const formatPhoneNumber = (value) => {
+  let digits = value.replace(/\D/g, "").slice(0, 10); // keep max 10 digits
+  const length = digits.length;
+
+  if (length === 0) return "";
+  if (length < 4) return `(${digits}`;
+  if (length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+};
+
 const SubmitPage = () => {
   const navigate = useNavigate();
 
@@ -27,7 +38,7 @@ const SubmitPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Handle all input changes (including file)
+  // Handle all input changes (including file + phone formatting)
   const handleChange = (e) => {
     const { name, value, files, type } = e.target;
 
@@ -36,12 +47,24 @@ const SubmitPage = () => {
         ...prev,
         [name]: files && files.length > 0 ? files[0] : null,
       }));
-    } else {
+      return;
+    }
+
+    // Special handling for phone fields
+    if (name === "senderPhone" || name === "recipientPhone") {
+      const formatted = formatPhoneNumber(value);
       setFormData((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: formatted,
       }));
+      return;
     }
+
+    // All other fields
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -52,12 +75,10 @@ const SubmitPage = () => {
     try {
       const data = new FormData();
 
-      // Sender
+      // Sender (email required)
       data.append("sender_name", formData.senderName);
       data.append("sender_phone", formData.senderPhone);
-      if (formData.senderEmail) {
-        data.append("sender_email", formData.senderEmail);
-      }
+      data.append("sender_email", formData.senderEmail);
       data.append("sender_address", formData.senderAddress);
 
       // Recipient
@@ -125,9 +146,11 @@ const SubmitPage = () => {
             onClick={goHome}
             className="flex items-center gap-2"
           >
-            <span className="font-bold text-[#73C2FB] text-lg">
-              SenderPlus
-            </span>
+            <img
+              src="/senderplus-logo.png"
+              alt="Sender+ logo"
+              className="h-8 w-auto"
+            />
           </button>
           <nav className="flex gap-4 text-sm">
             <button
@@ -155,7 +178,7 @@ const SubmitPage = () => {
           <div className="text-center mb-6">
             <img
               src="/senderplus-logo.png"
-              alt="SenderPlus Logo"
+              alt="Sender+ logo"
               className="w-56 mx-auto mb-4"
             />
             <h2 className="text-2xl md:text-3xl font-bold text-[#73C2FB]">
@@ -201,20 +224,28 @@ const SubmitPage = () => {
                   </label>
                   <input
                     name="senderPhone"
+                    value={formData.senderPhone}
                     onChange={handleChange}
                     className="input"
                     required
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={14} // (000) 000-0000
+                    pattern="\(\d{3}\) \d{3}-\d{4}"
+                    title="Please enter a 10-digit phone number."
                   />
                 </div>
                 <div>
                   <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                    Email (optional)
+                    Email
                   </label>
                   <input
                     name="senderEmail"
                     type="email"
+                    value={formData.senderEmail}
                     onChange={handleChange}
                     className="input"
+                    required
                   />
                 </div>
                 <div>
@@ -254,9 +285,15 @@ const SubmitPage = () => {
                   </label>
                   <input
                     name="recipientPhone"
+                    value={formData.recipientPhone}
                     onChange={handleChange}
                     className="input"
                     required
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={14}
+                    pattern="\(\d{3}\) \d{3}-\d{4}"
+                    title="Please enter a 10-digit phone number."
                   />
                 </div>
                 <div>

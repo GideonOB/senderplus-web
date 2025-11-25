@@ -19,7 +19,7 @@ const AuthLandingPage = () => {
                         className="w-52 mx-auto mb-4"
                     />
                     <h1 className="text-2xl font-bold tracking-wide">
-                        Welcome to SenderPlus
+                        Welcome to Sender+
                     </h1>
                     <p className="text-sm text-white/80 mt-1">
                         Bridging Ghana One Package at a Time.
