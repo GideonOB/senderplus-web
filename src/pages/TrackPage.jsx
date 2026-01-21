@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-const API_BASE_URL = "https://senderplus-api.onrender.com";
+const API_BASE_URL = "https://senderplus-django-api.onrender.com";
 
 const STATUS_STEPS = [
   "Waiting for package to reach bus station",

@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE_URL = "https://senderplus-api.onrender.com"; // backend URL
+const API_BASE_URL = "https://senderplus-django-api.onrender.com"; // backend URL
 
 // Helper: format phone as (000) 000-0000 and strip non-digits
 const formatPhoneNumber = (value) => {
