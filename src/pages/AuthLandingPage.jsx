@@ -5,6 +5,14 @@ import { useNavigate } from "react-router-dom";
 const AuthLandingPage = () => {
     const navigate = useNavigate();
 
+    const handleLogin = () => {
+        navigate("/confirm");
+    };
+
+    const handleSignUp = () => {
+        navigate("/confirm");
+    };
+
     const handleSkip = () => {
         navigate("/confirm");
     };
@@ -29,12 +37,14 @@ const AuthLandingPage = () => {
                 <div className="space-y-3">
                     <button
                         type="button"
+                        onClick={handleLogin}
                         className="w-full bg-white text-[#7E191B] font-semibold py-2.5 rounded-full shadow-sm hover:bg-gray-100 transition"
                     >
                         Log In
                     </button>
                     <button
                         type="button"
+                        onClick={handleSignUp}
                         className="w-full border border-white/80 text-white font-semibold py-2.5 rounded-full hover:bg-white/10 transition"
                     >
                         Sign Up
