@@ -1,34 +1,10 @@
-# backend/packages/views.py
+from decimal import Decimal, InvalidOperation
 
-import os
-import uuid
-
-from django.conf import settings
-from django.http import JsonResponse, Http404, HttpResponseNotAllowed
+from django.http import JsonResponse, HttpResponseNotAllowed
+from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 
-# Status lifecycle must match the React app's STATUS_STEPS exactly.
-STATUS_STEPS = [
-    "Waiting for package to reach bus station",
-    "Package in our van en route to campus",
-    "Package at our campus hub",
-    "Package delivered to recipient",
-]
-
-# In-memory "database" for MVP.
-# NOTE: This resets when the Render instance restarts, which is fine for demo.
-PACKAGES = {}
-
-
-def _build_photo_url(filename: str | None) -> str | None:
-    """
-    Given a filename stored under MEDIA_ROOT, return the URL path that
-    the frontend can use. Returns None if no filename.
-    """
-    if not filename:
-        return None
-    base = settings.MEDIA_URL.rstrip("/")  # e.g. "/uploads"
-    return f"{base}/{filename}"
+from .models import Package
 
 
 @csrf_exempt
@@ -88,8 +64,8 @@ def submit_package(request):
 
     # Safely parse numeric fields
     try:
-        weight = float(weight_raw)
-    except ValueError:
+        weight = Decimal(weight_raw)
+    except (InvalidOperation, TypeError):
         return JsonResponse(
             {"detail": "Weight must be a valid number."},
             status=400,
@@ -98,60 +74,58 @@ def submit_package(request):
     value = None
     if value_raw:
         try:
-            value = float(value_raw)
-        except ValueError:
+            value = Decimal(value_raw)
+        except (InvalidOperation, TypeError):
             return JsonResponse(
                 {"detail": "Value must be a valid number if provided."},
                 status=400,
             )
 
-    # Generate tracking ID
-    tracking_id = uuid.uuid4().hex[:8]
-
-    # Handle file upload
-    photo_filename = None
-    if photo:
-        # Ensure MEDIA_ROOT exists
-        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
-        _, ext = os.path.splitext(photo.name)
-        # Simple filename pattern including tracking_id
-        photo_filename = f"{tracking_id}{ext or ''}"
-        save_path = os.path.join(settings.MEDIA_ROOT, photo_filename)
-
-        with open(save_path, "wb") as dest:
-            for chunk in photo.chunks():
-                dest.write(chunk)
-
-    # Build package record
-    pkg = {
-        "tracking_id": tracking_id,
-        "sender_name": sender_name,
-        "sender_phone": sender_phone,
-        "sender_email": sender_email or None,
-        "sender_address": sender_address,
-        "recipient_name": recipient_name,
-        "recipient_phone": recipient_phone,
-        "recipient_email": recipient_email or None,
-        "recipient_address": recipient_address,
-        "package_name": package_name,
-        "package_type": package_type,
-        "weight": weight,
-        "value": value,
-        "description": description or "",
-        "photo_url": _build_photo_url(photo_filename),
-        "status": STATUS_STEPS[0],  # initial status
-    }
-
-    # Store in the in-memory "DB"
-    PACKAGES[tracking_id] = pkg
+    pkg = Package.objects.create(
+        sender_name=sender_name,
+        sender_phone=sender_phone,
+        sender_email=sender_email or None,
+        sender_address=sender_address,
+        recipient_name=recipient_name,
+        recipient_phone=recipient_phone,
+        recipient_email=recipient_email or None,
+        recipient_address=recipient_address,
+        package_name=package_name,
+        package_type=package_type,
+        weight=weight,
+        value=value,
+        description=description or None,
+        photo=photo,
+    )
 
     # Response expected by the React SubmitPage
     return JsonResponse(
         {
             "message": "Package submitted successfully",
-            "tracking_id": tracking_id,
+            "tracking_id": pkg.tracking_id,
         }
     )
+
+
+def _serialize_package(pkg: Package) -> dict:
+    return {
+        "tracking_id": pkg.tracking_id,
+        "sender_name": pkg.sender_name,
+        "sender_phone": pkg.sender_phone,
+        "sender_email": pkg.sender_email,
+        "sender_address": pkg.sender_address,
+        "recipient_name": pkg.recipient_name,
+        "recipient_phone": pkg.recipient_phone,
+        "recipient_email": pkg.recipient_email,
+        "recipient_address": pkg.recipient_address,
+        "package_name": pkg.package_name,
+        "package_type": pkg.package_type,
+        "weight": pkg.weight,
+        "value": pkg.value,
+        "description": pkg.description or "",
+        "photo_url": pkg.photo.url if pkg.photo else None,
+        "status": pkg.get_status_display(),
+    }
 
 
 def track_package(request, tracking_id: str):
@@ -162,11 +136,9 @@ def track_package(request, tracking_id: str):
     if request.method != "GET":
         return HttpResponseNotAllowed(["GET"])
 
-    pkg = PACKAGES.get(tracking_id)
-    if not pkg:
-        raise Http404("Package not found")
+    pkg = get_object_or_404(Package, tracking_id=tracking_id)
 
-    return JsonResponse(pkg)
+    return JsonResponse(_serialize_package(pkg))
 
 
 @csrf_exempt
@@ -178,18 +150,7 @@ def advance_status(request, tracking_id: str):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
 
-    pkg = PACKAGES.get(tracking_id)
-    if not pkg:
-        raise Http404("Package not found")
+    pkg = get_object_or_404(Package, tracking_id=tracking_id)
+    pkg.advance_status()
 
-    current_status = pkg.get("status")
-    try:
-        idx = STATUS_STEPS.index(current_status)
-    except ValueError:
-        idx = -1
-
-    if idx < len(STATUS_STEPS) - 1:
-        pkg["status"] = STATUS_STEPS[idx + 1]
-        PACKAGES[tracking_id] = pkg
-
-    return JsonResponse(pkg)
+    return JsonResponse(_serialize_package(pkg))
