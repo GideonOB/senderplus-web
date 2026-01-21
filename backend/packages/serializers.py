@@ -36,6 +36,7 @@ class PackageCreateSerializer(serializers.ModelSerializer):
 
 class PackageDetailSerializer(serializers.ModelSerializer):
     status_display = serializers.SerializerMethodField()
+    photo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Package
@@ -55,6 +56,7 @@ class PackageDetailSerializer(serializers.ModelSerializer):
             "value",
             "description",
             "photo",
+            "photo_url",
             "status",
             "status_display",
             "created_at",
@@ -63,3 +65,8 @@ class PackageDetailSerializer(serializers.ModelSerializer):
 
     def get_status_display(self, obj):
         return obj.get_status_display()
+
+    def get_photo_url(self, obj):
+        if obj.photo:
+            return obj.photo.url
+        return None

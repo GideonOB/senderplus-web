@@ -13,10 +13,10 @@ class PackageAdmin(admin.ModelAdmin):
     )
     search_fields = ("tracking_id", "sender_name", "recipient_name")
     list_filter = ("status", "created_at")
-'''Now you’ll be able to log into /admin/ and see packages in a nice UI.
+    readonly_fields = ("tracking_id", "created_at", "updated_at")
+    actions = ("advance_status_action",)
 
-
-
-Create a superuser later with:
-
-python manage.py createsuperuser'''
+    @admin.action(description="Advance status for selected packages")
+    def advance_status_action(self, request, queryset):
+        for package in queryset:
+            package.advance_status()
