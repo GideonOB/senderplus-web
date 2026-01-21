@@ -98,9 +98,11 @@ const TrackPage = () => {
     }
   };
 
+  const statusLabel = pkg?.status_display || pkg?.status || "";
+
   const currentStatusIndex =
-    pkg && STATUS_STEPS.includes(pkg.status)
-      ? STATUS_STEPS.indexOf(pkg.status)
+    pkg && STATUS_STEPS.includes(statusLabel)
+      ? STATUS_STEPS.indexOf(statusLabel)
       : -1;
 
   const imageUrl =
@@ -196,7 +198,7 @@ const TrackPage = () => {
                   <div className="flex flex-col items-start md:items-end gap-1">
                     <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-[#73C2FB]/10 text-[#73C2FB]">
                       <span>📍</span>
-                      <span>{pkg.status}</span>
+                      <span>{statusLabel}</span>
                     </span>
                   </div>
                 </div>

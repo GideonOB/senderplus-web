@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "corsheaders",
 
     # Local apps
+    "accounts",
     "packages",
 ]
 
@@ -111,6 +112,8 @@ MEDIA_URL = "/uploads/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "Uploads")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # DRF (you can expand later)
 REST_FRAMEWORK = {

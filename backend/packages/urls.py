@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import SubmitPackageView, TrackPackageView, AdvanceStatusView
+
+from .views import AdvanceStatusView, SubmitPackageView, TrackPackageView
 
 urlpatterns = [
     path("submit-package", SubmitPackageView.as_view(), name="submit-package"),
@@ -10,11 +11,3 @@ urlpatterns = [
         name="advance-status",
     ),
 ]
-'''Because senderplus_core/urls.py includes path("", include("packages.urls")), the final URLs are:
-
-POST /submit-package
-
-GET /track/<tracking_id>
-
-POST /advance-status/<tracking_id>
-'''
