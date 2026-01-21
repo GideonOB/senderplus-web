@@ -1,52 +1,195 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.shortcuts import get_object_or_404
+# backend/packages/views.py
 
-from .models import Package
-from .serializers import PackageCreateSerializer, PackageDetailSerializer
+import os
+import uuid
+
+from django.conf import settings
+from django.http import JsonResponse, Http404, HttpResponseNotAllowed
+from django.views.decorators.csrf import csrf_exempt
+
+# Status lifecycle must match the React app's STATUS_STEPS exactly.
+STATUS_STEPS = [
+    "Waiting for package to reach bus station",
+    "Package in our van en route to campus",
+    "Package at our campus hub",
+    "Package delivered to recipient",
+]
+
+# In-memory "database" for MVP.
+# NOTE: This resets when the Render instance restarts, which is fine for demo.
+PACKAGES = {}
 
 
-class SubmitPackageView(APIView):
+def _build_photo_url(filename: str | None) -> str | None:
     """
-    POST /submit-package
-    Accepts multipart/form-data including optional photo.
+    Given a filename stored under MEDIA_ROOT, return the URL path that
+    the frontend can use. Returns None if no filename.
     """
+    if not filename:
+        return None
+    base = settings.MEDIA_URL.rstrip("/")  # e.g. "/uploads"
+    return f"{base}/{filename}"
 
-    def post(self, request, *args, **kwargs):
-        serializer = PackageCreateSerializer(data=request.data)
-        if serializer.is_valid():
-            pkg = serializer.save()
-            return Response(
-                {
-                    "message": "Package submitted successfully",
-                    "tracking_id": pkg.tracking_id,
-                },
-                status=status.HTTP_201_CREATED,
+
+@csrf_exempt
+def submit_package(request):
+    """
+    Handles POST /submit-package
+
+    Expects multipart/form-data with fields:
+      sender_name, sender_phone, sender_email (optional), sender_address
+      recipient_name, recipient_phone, recipient_email (optional), recipient_address
+      package_name, package_type, weight, value (optional), description (optional)
+      photo (optional file)
+    """
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    # Required fields coming from the React form
+    sender_name = request.POST.get("sender_name", "").strip()
+    sender_phone = request.POST.get("sender_phone", "").strip()
+    sender_email = request.POST.get("sender_email", "").strip()
+    sender_address = request.POST.get("sender_address", "").strip()
+
+    recipient_name = request.POST.get("recipient_name", "").strip()
+    recipient_phone = request.POST.get("recipient_phone", "").strip()
+    recipient_email = request.POST.get("recipient_email", "").strip()
+    recipient_address = request.POST.get("recipient_address", "").strip()
+
+    package_name = request.POST.get("package_name", "").strip()
+    package_type = request.POST.get("package_type", "").strip()
+    weight_raw = request.POST.get("weight", "").strip()
+    value_raw = request.POST.get("value", "").strip()
+    description = request.POST.get("description", "").strip()
+
+    photo = request.FILES.get("photo")
+
+    # Basic validation for required fields
+    required_fields = {
+        "sender_name": sender_name,
+        "sender_phone": sender_phone,
+        "sender_address": sender_address,
+        "recipient_name": recipient_name,
+        "recipient_phone": recipient_phone,
+        "recipient_address": recipient_address,
+        "package_name": package_name,
+        "package_type": package_type,
+        "weight": weight_raw,
+    }
+
+    missing = [key for key, val in required_fields.items() if not val]
+    if missing:
+        return JsonResponse(
+            {
+                "detail": f"Missing required fields: {', '.join(missing)}"
+            },
+            status=400,
+        )
+
+    # Safely parse numeric fields
+    try:
+        weight = float(weight_raw)
+    except ValueError:
+        return JsonResponse(
+            {"detail": "Weight must be a valid number."},
+            status=400,
+        )
+
+    value = None
+    if value_raw:
+        try:
+            value = float(value_raw)
+        except ValueError:
+            return JsonResponse(
+                {"detail": "Value must be a valid number if provided."},
+                status=400,
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # Generate tracking ID
+    tracking_id = uuid.uuid4().hex[:8]
+
+    # Handle file upload
+    photo_filename = None
+    if photo:
+        # Ensure MEDIA_ROOT exists
+        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+        _, ext = os.path.splitext(photo.name)
+        # Simple filename pattern including tracking_id
+        photo_filename = f"{tracking_id}{ext or ''}"
+        save_path = os.path.join(settings.MEDIA_ROOT, photo_filename)
+
+        with open(save_path, "wb") as dest:
+            for chunk in photo.chunks():
+                dest.write(chunk)
+
+    # Build package record
+    pkg = {
+        "tracking_id": tracking_id,
+        "sender_name": sender_name,
+        "sender_phone": sender_phone,
+        "sender_email": sender_email or None,
+        "sender_address": sender_address,
+        "recipient_name": recipient_name,
+        "recipient_phone": recipient_phone,
+        "recipient_email": recipient_email or None,
+        "recipient_address": recipient_address,
+        "package_name": package_name,
+        "package_type": package_type,
+        "weight": weight,
+        "value": value,
+        "description": description or "",
+        "photo_url": _build_photo_url(photo_filename),
+        "status": STATUS_STEPS[0],  # initial status
+    }
+
+    # Store in the in-memory "DB"
+    PACKAGES[tracking_id] = pkg
+
+    # Response expected by the React SubmitPage
+    return JsonResponse(
+        {
+            "message": "Package submitted successfully",
+            "tracking_id": tracking_id,
+        }
+    )
 
 
-class TrackPackageView(APIView):
+def track_package(request, tracking_id: str):
     """
-    GET /track/<tracking_id>
-    Returns full package details.
+    Handles GET /track/<tracking_id>
+    Returns the stored package JSON, or 404 if not found.
     """
+    if request.method != "GET":
+        return HttpResponseNotAllowed(["GET"])
 
-    def get(self, request, tracking_id, *args, **kwargs):
-        pkg = get_object_or_404(Package, tracking_id=tracking_id)
-        serializer = PackageDetailSerializer(pkg)
-        return Response(serializer.data)
+    pkg = PACKAGES.get(tracking_id)
+    if not pkg:
+        raise Http404("Package not found")
+
+    return JsonResponse(pkg)
 
 
-class AdvanceStatusView(APIView):
+@csrf_exempt
+def advance_status(request, tracking_id: str):
     """
-    POST /advance-status/<tracking_id>
-    Demo endpoint: advances status through the lifecycle.
+    Handles POST /advance-status/<tracking_id>
+    For demo purposes, advances the status to the next step and returns the package JSON.
     """
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
 
-    def post(self, request, tracking_id, *args, **kwargs):
-        pkg = get_object_or_404(Package, tracking_id=tracking_id)
-        pkg.advance_status()
-        serializer = PackageDetailSerializer(pkg)
-        return Response(serializer.data)
+    pkg = PACKAGES.get(tracking_id)
+    if not pkg:
+        raise Http404("Package not found")
+
+    current_status = pkg.get("status")
+    try:
+        idx = STATUS_STEPS.index(current_status)
+    except ValueError:
+        idx = -1
+
+    if idx < len(STATUS_STEPS) - 1:
+        pkg["status"] = STATUS_STEPS[idx + 1]
+        PACKAGES[tracking_id] = pkg
+
+    return JsonResponse(pkg)

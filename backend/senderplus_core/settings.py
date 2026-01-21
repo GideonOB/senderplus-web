@@ -107,8 +107,8 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 # Media (for uploaded package photos)
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/uploads/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "Uploads")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
