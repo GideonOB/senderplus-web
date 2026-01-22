@@ -1,6 +1,7 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AuthLandingPage from "./pages/AuthLandingPage";
+import AuthFormPage from "./pages/AuthFormPage";
 import ConfirmCodePage from "./pages/ConfirmCodePage";
 import HomePage from "./pages/HomePage";
 import SubmitPage from "./pages/SubmitPage";
@@ -14,6 +15,8 @@ function App() {
       <Routes>
         {/* Auth flow */}
         <Route path="/" element={<AuthLandingPage />} />
+        <Route path="/login" element={<AuthFormPage mode="login" />} />
+        <Route path="/signup" element={<AuthFormPage mode="signup" />} />
         <Route path="/confirm" element={<ConfirmCodePage />} />
 
         {/* Main app */}
