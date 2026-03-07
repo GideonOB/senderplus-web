@@ -6,3 +6,86 @@
 .input {
   @apply border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#73C2FB] w-full;
 }
+
+/* Theme tokens */
+:root,
+body.theme-light {
+  --app-bg: #f8fafc;
+  --app-text: #111827;
+  --card-bg: #ffffff;
+  --muted-text: #6b7280;
+  --border-color: #e5e7eb;
+  --header-bg: rgba(255, 255, 255, 0.8);
+}
+
+body.theme-dark {
+  --app-bg: #0b1220;
+  --app-text: #e2e8f0;
+  --card-bg: #182235;
+  --muted-text: #94a3b8;
+  --border-color: #334155;
+  --header-bg: rgba(15, 23, 42, 0.9);
+}
+
+body.theme-ocean {
+  --app-bg: #e6f4ff;
+  --app-text: #073b5c;
+  --card-bg: #f2faff;
+  --muted-text: #3b6d8a;
+  --border-color: #9fc6df;
+  --header-bg: rgba(242, 250, 255, 0.9);
+}
+
+body {
+  background: var(--app-bg);
+  color: var(--app-text);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Utility overrides to keep existing Tailwind-heavy pages themed */
+body.theme-dark .bg-white,
+body.theme-dark .bg-gray-50,
+body.theme-ocean .bg-white,
+body.theme-ocean .bg-gray-50 {
+  background-color: var(--card-bg) !important;
+}
+
+body.theme-dark .bg-white\/80,
+body.theme-ocean .bg-white\/80 {
+  background-color: var(--header-bg) !important;
+}
+
+body.theme-dark .text-gray-900,
+body.theme-dark .text-gray-800,
+body.theme-dark .text-gray-700,
+body.theme-dark .text-gray-600,
+body.theme-dark .text-gray-500,
+body.theme-ocean .text-gray-900,
+body.theme-ocean .text-gray-800,
+body.theme-ocean .text-gray-700,
+body.theme-ocean .text-gray-600,
+body.theme-ocean .text-gray-500 {
+  color: var(--app-text) !important;
+}
+
+body.theme-dark .border-gray-100,
+body.theme-dark .border-gray-200,
+body.theme-dark .border-gray-300,
+body.theme-ocean .border-gray-100,
+body.theme-ocean .border-gray-200,
+body.theme-ocean .border-gray-300 {
+  border-color: var(--border-color) !important;
+}
+
+body.theme-dark .input,
+body.theme-ocean .input {
+  background-color: var(--card-bg);
+  color: var(--app-text);
+  border-color: var(--border-color);
+}
+
+body.theme-dark .bg-gradient-to-b,
+body.theme-ocean .bg-gradient-to-b {
+  background-image: none !important;
+  background-color: var(--app-bg) !important;
+}
