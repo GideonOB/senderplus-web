@@ -145,7 +145,7 @@ const HomePage = () => {
                                     Live package tracking
                                 </p>
                                 <p className="text-sm text-gray-600 mt-1">
-                                    Real-time updates from bus station to campus hub to doorstep—
+                                    Real-time updates from bus station to campus hub to doorstep –
                                     designed for Ghanaian students and their families.
                                 </p>
                             </div>
