@@ -6,11 +6,13 @@ import HomePage from "./pages/HomePage";
 import SubmitPage from "./pages/SubmitPage";
 import TrackPage from "./pages/TrackPage";
 import SupportPage from "./pages/SupportPage";
-import SubmitSuccessPage from "./pages/SubmitSuccessPage"; // 👈 NEW
+import SubmitSuccessPage from "./pages/SubmitSuccessPage";
+import { ThemeProvider } from "./themeContext";
 
 function App() {
   return (
-    <Router>
+    <ThemeProvider>
+      <Router>
       <Routes>
         {/* Auth flow */}
         <Route path="/" element={<AuthLandingPage />} />
@@ -23,7 +25,8 @@ function App() {
         <Route path="/track" element={<TrackPage />} />
         <Route path="/support" element={<SupportPage />} />
       </Routes>
-    </Router>
+      </Router>
+    </ThemeProvider>
   );
 }
 
