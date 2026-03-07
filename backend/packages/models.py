@@ -1,6 +1,6 @@
 import uuid
 
-from cloudinary_storage.storage import MediaCloudinaryStorage
+from django.conf import settings
 from django.db import models
 
 # Status lifecycle – same text as your FastAPI version
@@ -45,12 +45,17 @@ class Package(models.Model):
     )
     description = models.TextField(blank=True, null=True)
 
-    photo = models.ImageField(
-        upload_to="package_photos/",
-        storage=MediaCloudinaryStorage(),
-        blank=True,
-        null=True,
-    )
+    if getattr(settings, "USE_CLOUDINARY_STORAGE", False):
+        from cloudinary_storage.storage import MediaCloudinaryStorage
+
+        photo = models.ImageField(
+            upload_to="package_photos/",
+            storage=MediaCloudinaryStorage(),
+            blank=True,
+            null=True,
+        )
+    else:
+        photo = models.ImageField(upload_to="package_photos/", blank=True, null=True)
 
     status = models.CharField(
         max_length=50,
