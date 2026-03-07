@@ -1,9 +1,12 @@
 // src/pages/HomePage.jsx
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../themeContext";
 
 const HomePage = () => {
     const navigate = useNavigate();
+    const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+    const { theme, setTheme } = useTheme();
 
     const goHome = () => navigate("/home");
     const goSend = () => navigate("/submit");
@@ -14,10 +17,16 @@ const HomePage = () => {
         alert("My Account (demo) – coming soon.");
     };
 
+    const themeOptions = [
+        { id: "light", label: "Light" },
+        { id: "dark", label: "Dark" },
+        { id: "forest", label: "Forest" },
+    ];
+
     return (
-        <div className="min-h-screen bg-gradient-to-b from-[#73C2FB] via-white to-[#7E191B]/10 flex flex-col pb-16">
+        <div className="min-h-screen bg-gradient-to-b from-[#73C2FB] via-white to-[#7E191B]/10 flex flex-col pb-16 transition-colors">
             {/* Top logo/header */}
-            <header className="bg-white/80 backdrop-blur-sm shadow-sm">
+            <header className="relative z-30 bg-white/80 backdrop-blur-sm shadow-sm">
                 <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
                     <button
                         type="button"
@@ -30,6 +39,43 @@ const HomePage = () => {
                             className="h-8"
                         />
                     </button>
+
+                    <div className="relative">
+                        <button
+                            type="button"
+                            onClick={() => setIsThemeMenuOpen((prev) => !prev)}
+                            className="h-10 w-10 rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-100"
+                            aria-label="Open settings"
+                        >
+                            ⚙️
+                        </button>
+
+                        {isThemeMenuOpen && (
+                            <div className="absolute right-0 mt-2 w-48 rounded-xl border border-gray-200 bg-white p-3 shadow-lg z-50">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
+                                    Theme Settings
+                                </p>
+                                <div className="space-y-2">
+                                    {themeOptions.map((option) => (
+                                        <button
+                                            key={option.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setTheme(option.id);
+                                                setIsThemeMenuOpen(false);
+                                            }}
+                                            className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${theme === option.id
+                                                ? "bg-[#73C2FB] text-white"
+                                                : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+                                                }`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </header>
 

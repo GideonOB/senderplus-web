@@ -6,3 +6,79 @@
 .input {
   @apply border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#73C2FB] w-full;
 }
+
+/* App-wide theme presets */
+:root {
+  --app-bg: #f8fafc;
+  --app-text: #111827;
+  --card-bg: #ffffff;
+  --muted-text: #6b7280;
+  --border-color: #e5e7eb;
+}
+
+html[data-theme="dark"] {
+  --app-bg: #0f172a;
+  --app-text: #e5e7eb;
+  --card-bg: #1e293b;
+  --muted-text: #94a3b8;
+  --border-color: #334155;
+}
+
+html[data-theme="forest"] {
+  --app-bg: #e8f5e9;
+  --app-text: #1b4332;
+  --card-bg: #f1faee;
+  --muted-text: #2d6a4f;
+  --border-color: #95d5b2;
+}
+
+body {
+  background: var(--app-bg);
+  color: var(--app-text);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+html[data-theme="dark"] .bg-white,
+html[data-theme="forest"] .bg-white {
+  background-color: var(--card-bg) !important;
+}
+
+html[data-theme="dark"] .bg-gray-50,
+html[data-theme="forest"] .bg-gray-50 {
+  background-color: var(--app-bg) !important;
+}
+
+html[data-theme="dark"] .text-gray-900,
+html[data-theme="dark"] .text-gray-800,
+html[data-theme="dark"] .text-gray-700,
+html[data-theme="dark"] .text-gray-600,
+html[data-theme="dark"] .text-gray-500,
+html[data-theme="forest"] .text-gray-900,
+html[data-theme="forest"] .text-gray-800,
+html[data-theme="forest"] .text-gray-700,
+html[data-theme="forest"] .text-gray-600,
+html[data-theme="forest"] .text-gray-500 {
+  color: var(--app-text) !important;
+}
+
+html[data-theme="dark"] .border-gray-100,
+html[data-theme="dark"] .border-gray-200,
+html[data-theme="dark"] .border-gray-300,
+html[data-theme="forest"] .border-gray-100,
+html[data-theme="forest"] .border-gray-200,
+html[data-theme="forest"] .border-gray-300 {
+  border-color: var(--border-color) !important;
+}
+
+html[data-theme="dark"] .input,
+html[data-theme="forest"] .input {
+  background-color: var(--card-bg);
+  color: var(--app-text);
+  border-color: var(--border-color);
+}
+
+html[data-theme="dark"] .bg-gradient-to-b,
+html[data-theme="forest"] .bg-gradient-to-b {
+  background-image: none !important;
+  background-color: var(--app-bg) !important;
+}
