@@ -106,7 +106,11 @@ const TrackPage = () => {
       : -1;
 
   const imageUrl =
-    pkg && pkg.photo_url ? `${API_BASE_URL}${pkg.photo_url}` : null;
+    pkg && pkg.photo_url
+      ? pkg.photo_url.startsWith("http")
+        ? pkg.photo_url
+        : `${API_BASE_URL}${pkg.photo_url}`
+      : null;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col pb-16">
