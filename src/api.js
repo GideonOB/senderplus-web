@@ -1,5 +1,10 @@
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://senderplus-django-api.onrender.com";
+const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+if (!rawApiBaseUrl) {
+  throw new Error("Missing VITE_API_BASE_URL environment variable.");
+}
+
+export const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, "");
 
 export const apiFetch = async (path, options = {}, token = null) => {
   const headers = {
