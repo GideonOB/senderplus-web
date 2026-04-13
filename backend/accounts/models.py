@@ -2,8 +2,30 @@ from datetime import timedelta
 import random
 
 from django.conf import settings
+from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
+
+
+ghana_phone_validator = RegexValidator(
+    regex=r"^(\+233|0)\d{9}$",
+    message="Enter a valid Ghana phone number (e.g., +233241234567 or 0241234567).",
+)
+
+
+class CustomerProfile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="customer_profile",
+    )
+    phone_number = models.CharField(max_length=20, validators=[ghana_phone_validator])
+    address = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.email} profile"
 
 
 class EmailVerificationCode(models.Model):

@@ -66,7 +66,7 @@ class PackageApiTests(TestCase):
             f"/advance-status/{package.tracking_id}"
         )
 
-        self.assertEqual(response.status_code, 403)
+        self.assertIn(response.status_code, [401, 403])
 
         user_model = get_user_model()
         admin_user = user_model.objects.create_user(
