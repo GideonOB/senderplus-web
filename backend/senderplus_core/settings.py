@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "cloudinary",
     "cloudinary_storage",
     "rest_framework",
+    "rest_framework.authtoken",
     "corsheaders",
 
     # Local apps
@@ -136,10 +137,14 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # DRF (you can expand later)
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
-    ]
+    ],
 }
 
 # CORS – for dev you can keep it wide; tighten later for prod
