@@ -320,3 +320,67 @@ Minimum contract:
 6. Keep customer tracking endpoint backward-compatible while powered by new event model.
 
 If you execute this sprint cleanly, you can begin driver-app UI implementation without reworking backend fundamentals.
+
+---
+
+## Progress Delta Update (April 14, 2026)
+
+This section compares the April 9 assessment with the **current repository state on April 14, 2026**.
+
+### Status against Milestone 1 (engineering guardrails)
+
+1. **ESLint v9 migration: completed** ✅
+   - `eslint.config.js` now exists and `npm run lint` passes.
+2. **Frontend build health: still strong** ✅
+   - `npm run build` succeeds.
+3. **Reliable backend test command: improved but currently regressed** ⚠️
+   - `python manage.py test -v 1` now discovers tests (12), but there is a failing account flow test.
+4. **CI workflow: still missing** ❌
+   - No GitHub Actions workflow is present.
+
+### Status against Milestone 2 (production safety baseline)
+
+1. **Secrets and environment hardening: largely completed** ✅
+   - `SECRET_KEY` is required from environment.
+   - `DEBUG`, `ALLOWED_HOSTS`, CORS, CSRF, and cookie security flags are env-driven.
+2. **Deployment/env documentation: completed** ✅
+   - README includes explicit backend/frontend env variable guidance.
+
+### Status against Milestone 3 (frontend ↔ backend auth integration)
+
+1. **Signup/signin/verify wiring: completed** ✅
+   - Frontend auth pages and context now call backend auth endpoints.
+2. **Session persistence: completed** ✅
+   - Token/profile/demo mode persist to local storage.
+3. **Demo mode UX cleanup: partial** ⚠️
+   - Demo mode capability still exists; this is useful for demos, but should be feature-flagged for production.
+
+### Newly identified regression since the prior evaluation
+
+- **Backend auth test integrity risk in `accounts/tests.py`**
+  - There are duplicated/misaligned test blocks and at least one failing assertion in the end-to-end auth test path.
+  - This is now the top blocker because it can mask real auth regressions.
+
+### Updated progress estimate
+
+Given completed hardening and auth integration, but factoring in test-suite regression and missing CI:
+
+- Prior estimate (April 9): **~65% to production-ready v1**
+- Updated estimate (April 14): **~74% to production-ready v1**
+
+### Recommended next steps (re-prioritized)
+
+1. **Fix `accounts/tests.py` immediately (1 day)**
+   - Remove duplicated test blocks.
+   - Correct inconsistent fixtures/data in end-to-end auth tests.
+   - Ensure `python manage.py test -v 2` is green.
+2. **Add CI workflow (0.5–1 day)**
+   - Run `npm run lint`, `npm run build`, and backend tests on every PR.
+3. **Stabilize auth reliability (1–2 days)**
+   - Add negative-path tests for resend, expired OTP, wrong purpose, and challenge-token mismatch coverage.
+4. **Start platform expansion foundations (2–4 days)**
+   - Add RBAC role field(s) and begin status event table design, as outlined in the expansion roadmap.
+
+### Conclusion
+
+The repo has made meaningful progress relative to the April 9 snapshot, especially on linting, config hardening, and auth wiring. The highest leverage move now is to restore trust in the backend test suite and enforce checks in CI before proceeding into multi-app platform expansion.
