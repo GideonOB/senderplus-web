@@ -27,7 +27,12 @@ const SignupPage = () => {
     setError("");
     try {
       await signup(form);
-      navigate("/home");
+      navigate("/confirm", {
+        state: {
+          email: form.email,
+          purpose: "signup",
+        },
+      });
     } catch (err) {
       setError(err.message || "Signup failed.");
     } finally {

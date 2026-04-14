@@ -15,7 +15,17 @@ const LoginPage = () => {
     setLoading(true);
     setError("");
     try {
-      await signin({ email, password });
+      const data = await signin({ email, password });
+      if (data.requires_otp) {
+        navigate("/confirm", {
+          state: {
+            email,
+            purpose: "signin_device",
+            challenge_token: data.challenge_token,
+          },
+        });
+        return;
+      }
       navigate("/home");
     } catch (err) {
       setError(err.message || "Sign in failed.");

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useMemo, useState } from "react";
 import { apiFetch } from "./api";
 
 const AUTH_STORAGE_KEY = "senderplus-auth";
+const DEVICE_STORAGE_KEY = "senderplus-device-id";
 
 const AuthContext = createContext({
   token: null,
@@ -10,10 +11,28 @@ const AuthContext = createContext({
   isDemoMode: false,
   signup: async () => {},
   signin: async () => {},
+  sendCode: async () => {},
+  verifyCode: async () => {},
+  changePassword: async () => {},
   logout: () => {},
   setDemoMode: () => {},
   refreshProfile: async () => {},
 });
+
+const generateDeviceId = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `device-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+const getDeviceId = () => {
+  const existing = localStorage.getItem(DEVICE_STORAGE_KEY);
+  if (existing) return existing;
+  const next = generateDeviceId();
+  localStorage.setItem(DEVICE_STORAGE_KEY, next);
+  return next;
+};
 
 const getInitialAuthState = () => {
   try {
@@ -50,15 +69,15 @@ export const AuthProvider = ({ children }) => {
       throw new Error(data?.detail || "Could not create account.");
     }
 
-    persist({ token: data.token, profile: data.profile, isDemoMode: false });
     return data;
   };
 
   const signin = async (payload) => {
+    const deviceId = getDeviceId();
     const response = await apiFetch("/auth/signin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, device_id: deviceId }),
     });
 
     const data = await response.json();
@@ -66,7 +85,68 @@ export const AuthProvider = ({ children }) => {
       throw new Error(data?.detail || "Could not sign in.");
     }
 
-    persist({ token: data.token, profile: data.profile, isDemoMode: false });
+    if (data.token && data.profile) {
+      persist({ token: data.token, profile: data.profile, isDemoMode: false });
+    }
+
+    return data;
+  };
+
+  const sendCode = async ({ email, purpose }) => {
+    const response = await apiFetch(
+      "/auth/send-code",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, purpose }),
+      },
+      authState.token
+    );
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data?.detail || "Could not send verification code.");
+    }
+
+    return data;
+  };
+
+  const verifyCode = async ({ email, code, purpose, challenge_token }) => {
+    const deviceId = getDeviceId();
+    const response = await apiFetch("/auth/verify-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, code, purpose, challenge_token, device_id: deviceId }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data?.detail || "Code verification failed.");
+    }
+
+    if (data.token && data.profile) {
+      persist({ token: data.token, profile: data.profile, isDemoMode: false });
+    }
+
+    return data;
+  };
+
+  const changePassword = async ({ current_password, new_password, code }) => {
+    const response = await apiFetch(
+      "/auth/change-password",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ current_password, new_password, code }),
+      },
+      authState.token
+    );
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data?.detail || "Could not change password.");
+    }
+
     return data;
   };
 
@@ -97,6 +177,9 @@ export const AuthProvider = ({ children }) => {
       isDemoMode: authState.isDemoMode,
       signup,
       signin,
+      sendCode,
+      verifyCode,
+      changePassword,
       logout,
       setDemoMode,
       refreshProfile,
