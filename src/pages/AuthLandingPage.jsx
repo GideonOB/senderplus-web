@@ -1,20 +1,25 @@
 // src/pages/AuthLandingPage.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../authContext";
 
 const AuthLandingPage = () => {
     const navigate = useNavigate();
+    const { setDemoMode } = useAuth();
 
     const handleLogin = () => {
-        navigate("/confirm");
+        setDemoMode(false);
+        navigate("/login");
     };
 
     const handleSignUp = () => {
-        navigate("/confirm");
+        setDemoMode(false);
+        navigate("/signup");
     };
 
     const handleSkip = () => {
-        navigate("/confirm");
+        setDemoMode(true);
+        navigate("/home");
     };
 
     return (
