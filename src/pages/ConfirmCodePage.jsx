@@ -21,6 +21,21 @@ const PURPOSE_META = {
   },
 };
 
+const PURPOSE_META = {
+  signup: {
+    title: "Verify your email",
+    subtitle: "We sent a 6-digit code to your email. Enter it to finish creating your account.",
+  },
+  signin_device: {
+    title: "New browser check",
+    subtitle: "For your security, enter the 6-digit code we sent to your email.",
+  },
+  password_change: {
+    title: "Confirm password change",
+    subtitle: "Enter the 6-digit code sent to your email to change your password.",
+  },
+};
+
 const ConfirmCodePage = () => {
   const location = useLocation();
   const navigate = useNavigate();
