@@ -47,3 +47,4 @@ This repository does not use GitHub Actions. Run checks locally before pushing c
 
 - `npm run lint`
 - `npm run build`
+- `npm run quality-gate` (runs lint, build, and backend auth tests)

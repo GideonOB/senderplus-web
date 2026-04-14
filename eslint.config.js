@@ -30,7 +30,7 @@ export default [
       ...reactHooks.configs.recommended.rules,
       'no-unused-vars': 'off',
       'react-hooks/preserve-manual-memoization': 'off',
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true, allowExportNames: ['useAuth', 'useTheme'] }],
     },
   },
 ]

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { apiFetch } from "./api";
 
 const AUTH_STORAGE_KEY = "senderplus-auth";
@@ -52,12 +52,12 @@ const getInitialAuthState = () => {
 export const AuthProvider = ({ children }) => {
   const [authState, setAuthState] = useState(getInitialAuthState);
 
-  const persist = (next) => {
+  const persist = useCallback((next) => {
     setAuthState(next);
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(next));
-  };
+  }, []);
 
-  const signup = async (payload) => {
+  const signup = useCallback(async (payload) => {
     const response = await apiFetch("/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -70,9 +70,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     return data;
-  };
+  }, []);
 
-  const signin = async (payload) => {
+  const signin = useCallback(async (payload) => {
     const deviceId = getDeviceId();
     const response = await apiFetch("/auth/signin", {
       method: "POST",
@@ -90,9 +90,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     return data;
-  };
+  }, [persist]);
 
-  const sendCode = async ({ email, purpose }) => {
+  const sendCode = useCallback(async ({ email, purpose }) => {
     const response = await apiFetch(
       "/auth/send-code",
       {
@@ -109,9 +109,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     return data;
-  };
+  }, [authState.token]);
 
-  const verifyCode = async ({ email, code, purpose, challenge_token }) => {
+  const verifyCode = useCallback(async ({ email, code, purpose, challenge_token }) => {
     const deviceId = getDeviceId();
     const response = await apiFetch("/auth/verify-code", {
       method: "POST",
@@ -129,9 +129,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     return data;
-  };
+  }, [persist]);
 
-  const changePassword = async ({ current_password, new_password, code }) => {
+  const changePassword = useCallback(async ({ current_password, new_password, code }) => {
     const response = await apiFetch(
       "/auth/change-password",
       {
@@ -148,9 +148,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     return data;
-  };
+  }, [authState.token]);
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (!authState.token) return null;
     const response = await apiFetch("/auth/profile", { method: "GET" }, authState.token);
     if (!response.ok) {
@@ -159,15 +159,15 @@ export const AuthProvider = ({ children }) => {
     const profile = await response.json();
     persist({ ...authState, profile });
     return profile;
-  };
+  }, [authState, persist]);
 
-  const setDemoMode = (isDemoMode) => {
+  const setDemoMode = useCallback((isDemoMode) => {
     persist({ ...authState, isDemoMode });
-  };
+  }, [authState, persist]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     persist({ token: null, profile: null, isDemoMode: false });
-  };
+  }, [persist]);
 
   const value = useMemo(
     () => ({
@@ -184,7 +184,7 @@ export const AuthProvider = ({ children }) => {
       setDemoMode,
       refreshProfile,
     }),
-    [authState]
+    [authState, signup, signin, sendCode, verifyCode, changePassword, logout, setDemoMode, refreshProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

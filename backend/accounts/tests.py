@@ -133,6 +133,207 @@ class AccountsApiTests(TestCase):
             "/auth/send-code",
             {"purpose": EmailVerificationCode.PURPOSE_PASSWORD_CHANGE},
         )
+        self.assertEqual(signin_response.status_code, 200)
+        self.assertTrue(signin_response.data["requires_otp"])
+
+        code = EmailVerificationCode.objects.filter(
+            user=user, purpose=EmailVerificationCode.PURPOSE_SIGNIN_DEVICE
+        ).latest("created_at")
+
+        code = EmailVerificationCode.objects.filter(
+            user=user, purpose=EmailVerificationCode.PURPOSE_PASSWORD_CHANGE
+        ).latest("created_at")
+
+        change_response = self.client.post(
+            "/auth/change-password",
+            {
+                "current_password": "securepass123",
+                "new_password": "newsecurepass123",
+                "code": code.code,
+            },
+        )
+        self.assertEqual(change_response.status_code, 200)
+
+        user.refresh_from_db()
+        self.assertTrue(user.check_password("newsecurepass123"))
+
+
+    def test_verify_code_rejects_wrong_challenge_token(self):
+        user = self.user_model.objects.create_user(
+            username="risk@example.com",
+            email="risk@example.com",
+            password="securepass123",
+        )
+        CustomerProfile.objects.create(
+            user=user,
+            phone_number="0241234567",
+            address="Accra",
+            email_verified=True,
+        )
+
+        signin_response = self.client.post(
+            "/auth/signin",
+            {
+                "email": "risk@example.com",
+                "password": "securepass123",
+                "device_id": "device-risk",
+            },
+        )
+        self.assertEqual(signin_response.status_code, 200)
+
+        code = EmailVerificationCode.objects.filter(
+            user=user, purpose=EmailVerificationCode.PURPOSE_SIGNIN_DEVICE
+        ).latest("created_at")
+
+        verify_response = self.client.post(
+            "/auth/verify-code",
+            {
+                "email": "risk@example.com",
+                "code": code.code,
+                "purpose": EmailVerificationCode.PURPOSE_SIGNIN_DEVICE,
+                "challenge_token": "wrong-token",
+                "device_id": "device-risk",
+            },
+        )
+        self.assertEqual(verify_response.status_code, 400)
+
+    def test_password_change_rejects_invalid_code(self):
+        user = self.user_model.objects.create_user(
+            username="pwfail@example.com",
+            email="pwfail@example.com",
+            password="securepass123",
+        )
+        CustomerProfile.objects.create(
+            user=user,
+            phone_number="0241111111",
+            address="Accra",
+            email_verified=True,
+        )
+        token, _ = Token.objects.get_or_create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+        response = self.client.post(
+            "/auth/change-password",
+            {
+                "current_password": "securepass123",
+                "new_password": "newsecurepass123",
+                "code": "000000",
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_send_code_for_password_change_requires_auth(self):
+        response = self.client.post(
+            "/auth/send-code",
+            {"purpose": EmailVerificationCode.PURPOSE_PASSWORD_CHANGE},
+        )
+        self.assertEqual(response.status_code, 400)
+
+
+    def test_end_to_end_auth_journey(self):
+        signup_payload = {
+            "email": "journey@example.com",
+            "password": "securepass123",
+            "first_name": "Esi",
+            "last_name": "Boateng",
+            "phone_number": "0241234567",
+            "address": "Accra",
+        }
+        signup_response = self.client.post("/auth/signup", signup_payload)
+        self.assertEqual(signup_response.status_code, 201)
+
+        user = self.user_model.objects.get(email="journey@example.com")
+        signup_code = EmailVerificationCode.objects.filter(
+            user=user, purpose=EmailVerificationCode.PURPOSE_SIGNUP
+        ).latest("created_at")
+
+        verify_signup = self.client.post(
+            "/auth/verify-code",
+            {
+                "email": "journey@example.com",
+                "code": signup_code.code,
+                "purpose": EmailVerificationCode.PURPOSE_SIGNUP,
+            },
+        )
+        self.assertEqual(verify_signup.status_code, 200)
+
+        signin_response = self.client.post(
+            "/auth/signin",
+            {
+                "email": "journey@example.com",
+                "password": "securepass123",
+                "device_id": "journey-device",
+            },
+        )
+        self.assertEqual(signin_response.status_code, 200)
+        self.assertTrue(signin_response.data["requires_otp"])
+
+        signin_code = EmailVerificationCode.objects.filter(
+            user=user, purpose=EmailVerificationCode.PURPOSE_SIGNIN_DEVICE
+        ).latest("created_at")
+        verify_signin = self.client.post(
+            "/auth/verify-code",
+            {
+                "email": "journey@example.com",
+                "code": signin_code.code,
+                "purpose": EmailVerificationCode.PURPOSE_SIGNIN_DEVICE,
+                "challenge_token": signin_response.data["challenge_token"],
+                "device_id": "journey-device",
+            },
+        )
+        self.assertEqual(verify_signin.status_code, 200)
+        token = verify_signin.data["token"]
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token}")
+        self.client.post(
+            "/auth/send-code",
+            {"purpose": EmailVerificationCode.PURPOSE_PASSWORD_CHANGE},
+        )
+        pw_code = EmailVerificationCode.objects.filter(
+            user=user, purpose=EmailVerificationCode.PURPOSE_PASSWORD_CHANGE
+        ).latest("created_at")
+        change_response = self.client.post(
+            "/auth/change-password",
+            {
+                "current_password": "securepass123",
+                "new_password": "newsecurepass123",
+                "code": pw_code.code,
+            },
+        )
+        self.assertEqual(change_response.status_code, 200)
+
+        trusted_signin = self.client.post(
+            "/auth/signin",
+            {
+                "email": "user@example.com",
+                "password": "securepass123",
+                "device_id": "device-1",
+            },
+        )
+        self.assertEqual(trusted_signin.status_code, 200)
+        self.assertIn("token", trusted_signin.data)
+
+    def test_password_change_requires_code(self):
+        user = self.user_model.objects.create_user(
+            username="user3@example.com",
+            email="user3@example.com",
+            password="securepass123",
+            first_name="Kojo",
+            last_name="Asante",
+        )
+        CustomerProfile.objects.create(
+            user=user,
+            phone_number="0241111111",
+            address="Accra",
+            email_verified=True,
+        )
+        token, _ = Token.objects.get_or_create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+        send_response = self.client.post(
+            "/auth/send-code",
+            {"purpose": EmailVerificationCode.PURPOSE_PASSWORD_CHANGE},
+        )
         self.assertEqual(send_response.status_code, 200)
 
         code = EmailVerificationCode.objects.filter(
