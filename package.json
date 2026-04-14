@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "quality-gate": "npm run lint && npm run build && (cd backend && SECRET_KEY=test DEBUG=true python manage.py test accounts -v 1)"
   },
   "dependencies": {
     "react": "^18.2.0",

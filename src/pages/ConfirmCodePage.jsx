@@ -1,14 +1,41 @@
-// src/pages/ConfirmCodePage.jsx
-import React, { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../authContext";
 
 const CODE_LENGTH = 6;
 
+const PURPOSE_META = {
+  signup: {
+    title: "Verify your email",
+    subtitle: "We sent a 6-digit code to your email. Enter it to finish creating your account.",
+  },
+  signin_device: {
+    title: "New browser check",
+    subtitle: "For your security, enter the 6-digit code we sent to your email.",
+  },
+  password_change: {
+    title: "Confirm password change",
+    subtitle: "Enter the 6-digit code sent to your email to change your password.",
+  },
+};
+
 const ConfirmCodePage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { verifyCode, sendCode } = useAuth();
+
+  const email = location.state?.email || "";
+  const purpose = location.state?.purpose || "signup";
+  const challengeToken = location.state?.challenge_token || null;
+
+  const meta = useMemo(() => PURPOSE_META[purpose] || PURPOSE_META.signup, [purpose]);
+
   const [digits, setDigits] = useState(Array(CODE_LENGTH).fill(""));
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [resending, setResending] = useState(false);
   const inputsRef = useRef([]);
-  const navigate = useNavigate();
 
   const handleChange = (index, value) => {
     const char = value.slice(-1);
@@ -51,35 +78,71 @@ const ConfirmCodePage = () => {
     inputsRef.current[lastIndex]?.focus();
   };
 
-  const handleContinue = (e) => {
+  const handleContinue = async (e) => {
     e.preventDefault();
     const code = digits.join("");
 
-    if (!code || code.length < CODE_LENGTH) {
-      setError("Please enter the full confirmation code (demo).");
+    if (!email) {
+      setError("Missing email context. Please start from login or signup again.");
       return;
     }
 
-    // Real app: verify code here.
-    // Demo: go straight to Home.
+    if (!code || code.length < CODE_LENGTH) {
+      setError("Please enter the full 6-digit code.");
+      return;
+    }
+
+    setSubmitting(true);
     setError("");
-    navigate("/home");
+    setInfo("");
+
+    try {
+      await verifyCode({
+        email,
+        code,
+        purpose,
+        challenge_token: challengeToken,
+      });
+
+      if (purpose === "password_change") {
+        navigate("/profile", { state: { passwordChanged: true } });
+        return;
+      }
+
+      navigate("/home");
+    } catch (err) {
+      setError(err.message || "Code verification failed.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleSkip = () => {
-    navigate("/home");
+  const handleResend = async () => {
+    if (!email) {
+      setError("Missing email context. Please start again.");
+      return;
+    }
+
+    setResending(true);
+    setError("");
+    setInfo("");
+
+    try {
+      await sendCode({ email, purpose });
+      setInfo("Code re-sent. Check your email/logs.");
+    } catch (err) {
+      setError(err.message || "Could not resend code.");
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-6 md:p-8">
-        <h2 className="text-2xl font-bold text-[#73C2FB] text-center mb-2">
-          Confirm Your Details
-        </h2>
-        <p className="text-sm text-gray-600 text-center mb-6">
-          We’ve sent a one-time confirmation code to your phone or email
-          (demo simulation). Enter it below or skip to continue.
-        </p>
+        <h2 className="text-2xl font-bold text-[#73C2FB] text-center mb-2">{meta.title}</h2>
+        <p className="text-sm text-gray-600 text-center mb-2">{meta.subtitle}</p>
+        {email && <p className="text-xs text-center text-gray-500 mb-6">{email}</p>}
 
         {error && (
           <div className="mb-3 rounded bg-red-100 text-red-700 px-3 py-2 text-xs">
@@ -87,15 +150,18 @@ const ConfirmCodePage = () => {
           </div>
         )}
 
+        {info && (
+          <div className="mb-3 rounded bg-green-100 text-green-700 px-3 py-2 text-xs">
+            {info}
+          </div>
+        )}
+
         <form onSubmit={handleContinue} className="space-y-6">
           <div>
             <label className="block mb-2 text-gray-700 text-xs uppercase tracking-wide text-center">
-              Confirmation Code
+              6-digit code
             </label>
-            <div
-              className="flex justify-center gap-2"
-              onPaste={handlePaste}
-            >
+            <div className="flex justify-center gap-2" onPaste={handlePaste}>
               {digits.map((digit, index) => (
                 <input
                   key={index}
@@ -114,19 +180,21 @@ const ConfirmCodePage = () => {
 
           <button
             type="submit"
-            className="w-full bg-[#73C2FB] hover:bg-[#61B2EB] text-white font-semibold py-2.5 rounded-lg shadow-sm transition"
+            disabled={submitting}
+            className="w-full bg-[#73C2FB] hover:bg-[#61B2EB] text-white font-semibold py-2.5 rounded-lg shadow-sm transition disabled:opacity-70"
           >
-            Continue
+            {submitting ? "Verifying..." : "Verify & Continue"}
           </button>
         </form>
 
         <div className="mt-4 text-center">
           <button
             type="button"
-            onClick={handleSkip}
-            className="text-xs text-gray-500 underline underline-offset-4 hover:text-gray-700"
+            onClick={handleResend}
+            disabled={resending}
+            className="text-xs text-gray-500 underline underline-offset-4 hover:text-gray-700 disabled:opacity-70"
           >
-            Skip for now (demo)
+            {resending ? "Sending..." : "Resend code"}
           </button>
         </div>
       </div>
