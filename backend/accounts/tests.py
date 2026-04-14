@@ -133,7 +133,12 @@ class AccountsApiTests(TestCase):
             "/auth/send-code",
             {"purpose": EmailVerificationCode.PURPOSE_PASSWORD_CHANGE},
         )
-        self.assertEqual(send_response.status_code, 200)
+        self.assertEqual(signin_response.status_code, 200)
+        self.assertTrue(signin_response.data["requires_otp"])
+
+        code = EmailVerificationCode.objects.filter(
+            user=user, purpose=EmailVerificationCode.PURPOSE_SIGNIN_DEVICE
+        ).latest("created_at")
 
         code = EmailVerificationCode.objects.filter(
             user=user, purpose=EmailVerificationCode.PURPOSE_PASSWORD_CHANGE
@@ -296,6 +301,57 @@ class AccountsApiTests(TestCase):
             },
         )
         self.assertEqual(change_response.status_code, 200)
+
+        trusted_signin = self.client.post(
+            "/auth/signin",
+            {
+                "email": "user@example.com",
+                "password": "securepass123",
+                "device_id": "device-1",
+            },
+        )
+        self.assertEqual(trusted_signin.status_code, 200)
+        self.assertIn("token", trusted_signin.data)
+
+    def test_password_change_requires_code(self):
+        user = self.user_model.objects.create_user(
+            username="user3@example.com",
+            email="user3@example.com",
+            password="securepass123",
+            first_name="Kojo",
+            last_name="Asante",
+        )
+        CustomerProfile.objects.create(
+            user=user,
+            phone_number="0241111111",
+            address="Accra",
+            email_verified=True,
+        )
+        token, _ = Token.objects.get_or_create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+        send_response = self.client.post(
+            "/auth/send-code",
+            {"purpose": EmailVerificationCode.PURPOSE_PASSWORD_CHANGE},
+        )
+        self.assertEqual(send_response.status_code, 200)
+
+        code = EmailVerificationCode.objects.filter(
+            user=user, purpose=EmailVerificationCode.PURPOSE_PASSWORD_CHANGE
+        ).latest("created_at")
+
+        change_response = self.client.post(
+            "/auth/change-password",
+            {
+                "current_password": "securepass123",
+                "new_password": "newsecurepass123",
+                "code": code.code,
+            },
+        )
+        self.assertEqual(change_response.status_code, 200)
+
+        user.refresh_from_db()
+        self.assertTrue(user.check_password("newsecurepass123"))
 
     def test_profile_requires_token_and_can_update(self):
         user = self.user_model.objects.create_user(
