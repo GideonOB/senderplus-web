@@ -38,3 +38,20 @@ Set this in your frontend host:
 - `VITE_API_BASE_URL` (e.g., `https://senderplus-django-api.onrender.com`)
 
 Use `.env.example` as the template.
+
+---
+
+## CI / automation note
+
+This repository does not use GitHub Actions. Run checks locally before pushing changes:
+
+- `npm run lint`
+- `npm run build`
+- `npm run quality-gate` (runs lint, build, and backend auth tests)
+
+### Merge checklist (required)
+
+Before merging to `main`, run:
+
+- `npm run quality-gate`
+

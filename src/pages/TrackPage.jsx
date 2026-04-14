@@ -26,7 +26,6 @@ const TrackPage = () => {
     if (initialTrackingId) {
       handleFetch(initialTrackingId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialTrackingId]);
 
   const goHome = () => navigate("/home");
