@@ -13,11 +13,31 @@ ghana_phone_validator = RegexValidator(
     message="Enter a valid Ghana phone number (e.g., +233241234567 or 0241234567).",
 )
 
+GHANA_REGIONS = [
+    "Ahafo",
+    "Ashanti",
+    "Bono",
+    "Bono East",
+    "Central",
+    "Eastern",
+    "Greater Accra",
+    "North East",
+    "Northern",
+    "Oti",
+    "Savannah",
+    "Upper East",
+    "Upper West",
+    "Volta",
+    "Western",
+    "Western North",
+]
+
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source="user.first_name", required=False)
     last_name = serializers.CharField(source="user.last_name", required=False)
     email = serializers.EmailField(source="user.email", read_only=True)
+    profile_picture = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = CustomerProfile
@@ -25,8 +45,14 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "email",
+            "gender",
             "phone_number",
+            "street",
+            "city",
+            "region",
+            "ghana_post_gps",
             "address",
+            "profile_picture",
             "email_verified",
         ]
         read_only_fields = ["email_verified"]
@@ -52,8 +78,12 @@ class SignupSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, min_length=8)
     first_name = serializers.CharField(required=True, allow_blank=False)
     last_name = serializers.CharField(required=True, allow_blank=False)
+    gender = serializers.ChoiceField(choices=CustomerProfile.GENDER_CHOICES)
     phone_number = serializers.CharField(validators=[ghana_phone_validator])
-    address = serializers.CharField(required=True, allow_blank=False, max_length=255)
+    street = serializers.CharField(required=True, allow_blank=False, max_length=255)
+    city = serializers.CharField(required=True, allow_blank=False, max_length=120)
+    region = serializers.ChoiceField(choices=GHANA_REGIONS)
+    ghana_post_gps = serializers.CharField(required=False, allow_blank=True, max_length=40)
 
     def validate_email(self, value):
         if User.objects.filter(email__iexact=value).exists():
@@ -71,8 +101,13 @@ class SignupSerializer(serializers.Serializer):
         )
         CustomerProfile.objects.create(
             user=user,
+            gender=validated_data["gender"],
             phone_number=validated_data["phone_number"],
-            address=validated_data["address"],
+            street=validated_data["street"],
+            city=validated_data["city"],
+            region=validated_data["region"],
+            ghana_post_gps=validated_data.get("ghana_post_gps", ""),
+            address=f'{validated_data["street"]}, {validated_data["city"]}, {validated_data["region"]}',
         )
         return user
 

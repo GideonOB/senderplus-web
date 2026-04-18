@@ -38,7 +38,8 @@ const ConfirmCodePage = () => {
   const inputsRef = useRef([]);
 
   const handleChange = (index, value) => {
-    const char = value.slice(-1);
+    const numericOnly = value.replace(/\D/g, "");
+    const char = numericOnly.slice(-1);
     const updated = [...digits];
     updated[index] = char;
     setDigits(updated);
@@ -65,10 +66,11 @@ const ConfirmCodePage = () => {
 
   const handlePaste = (e) => {
     e.preventDefault();
-    const paste = e.clipboardData.getData("text").trim();
-    if (!paste) return;
+    const paste = e.clipboardData.getData("text");
+    const digitsOnly = paste.replace(/\D/g, "");
+    if (!digitsOnly) return;
 
-    const chars = paste.slice(0, CODE_LENGTH).split("");
+    const chars = digitsOnly.slice(0, CODE_LENGTH).split("");
     const updated = Array(CODE_LENGTH).fill("");
     for (let i = 0; i < chars.length; i++) {
       updated[i] = chars[i];
@@ -138,27 +140,31 @@ const ConfirmCodePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-6 md:p-8">
-        <h2 className="text-2xl font-bold text-[#73C2FB] text-center mb-2">{meta.title}</h2>
-        <p className="text-sm text-gray-600 text-center mb-2">{meta.subtitle}</p>
-        {email && <p className="text-xs text-center text-gray-500 mb-6">{email}</p>}
+    <div className="auth-shell">
+      <div className="auth-orb auth-orb--blue" aria-hidden="true" />
+      <div className="auth-orb auth-orb--pink" aria-hidden="true" />
+      <div className="auth-orb auth-orb--violet" aria-hidden="true" />
 
+      <div className="auth-card w-full max-w-md p-7 md:p-9">
+        <p className="auth-kicker">Secure verification</p>
+        <h2 className="text-3xl font-bold text-slate-900">{meta.title}</h2>
+        <p className="mt-2 text-sm text-slate-600">{meta.subtitle}</p>
+        {email && <p className="mt-1 text-xs text-slate-500">{email}</p>}
+
+        {info && (
+          <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+            {info}
+          </div>
+        )}
         {error && (
-          <div className="mb-3 rounded bg-red-100 text-red-700 px-3 py-2 text-xs">
+          <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
             {error}
           </div>
         )}
 
-        {info && (
-          <div className="mb-3 rounded bg-green-100 text-green-700 px-3 py-2 text-xs">
-            {info}
-          </div>
-        )}
-
-        <form onSubmit={handleContinue} className="space-y-6">
+        <form onSubmit={handleContinue} className="mt-6 space-y-6">
           <div>
-            <label className="block mb-2 text-gray-700 text-xs uppercase tracking-wide text-center">
+            <label className="mb-2 block text-center text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
               6-digit code
             </label>
             <div className="flex justify-center gap-2" onPaste={handlePaste}>
@@ -172,7 +178,7 @@ const ConfirmCodePage = () => {
                   onChange={(e) => handleChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   ref={(el) => (inputsRef.current[index] = el)}
-                  className="w-10 h-12 md:w-12 md:h-14 text-center text-lg font-semibold border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#73C2FB]"
+                  className="auth-input h-12 w-10 px-0 text-center text-lg font-semibold md:h-14 md:w-12"
                 />
               ))}
             </div>
@@ -181,18 +187,18 @@ const ConfirmCodePage = () => {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-[#73C2FB] hover:bg-[#61B2EB] text-white font-semibold py-2.5 rounded-lg shadow-sm transition disabled:opacity-70"
+            className="auth-button w-full"
           >
             {submitting ? "Verifying..." : "Verify & Continue"}
           </button>
         </form>
 
-        <div className="mt-4 text-center">
+        <div className="mt-5 text-center">
           <button
             type="button"
             onClick={handleResend}
             disabled={resending}
-            className="text-xs text-gray-500 underline underline-offset-4 hover:text-gray-700 disabled:opacity-70"
+            className="text-xs font-medium text-slate-500 underline underline-offset-4 transition hover:text-slate-700 disabled:opacity-70"
           >
             {resending ? "Sending..." : "Resend code"}
           </button>
