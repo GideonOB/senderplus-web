@@ -6,7 +6,7 @@ import { API_BASE_URL } from "../api";
 
 // Helper: format phone as (000) 000-0000 and strip non-digits
 const formatPhoneNumber = (value) => {
-  let digits = value.replace(/\D/g, "").slice(0, 10); // keep max 10 digits
+  const digits = value.replace(/\D/g, "").slice(0, 10); // keep max 10 digits
   const length = digits.length;
 
   if (length === 0) return "";
@@ -137,157 +137,59 @@ const SubmitPage = () => {
   const goTrack = () => navigate("/track");
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Top nav */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
-          <button
-            type="button"
-            onClick={goHome}
-            className="flex items-center gap-2"
-          >
-            <img
-              src="/senderplus-logo.png"
-              alt="Sender+ logo"
-              className="h-8 w-auto"
-            />
+    <div className="plush-shell min-h-screen pb-8">
+      <div className="auth-orb auth-orb--blue" aria-hidden="true" />
+      <div className="auth-orb auth-orb--pink" aria-hidden="true" />
+      <div className="auth-orb auth-orb--violet" aria-hidden="true" />
+
+      <header className="plush-nav mx-auto mt-4 max-w-6xl px-4 py-3 sm:px-5">
+        <div className="flex items-center justify-between gap-3">
+          <button type="button" onClick={goHome} className="flex items-center gap-2">
+            <img src="/senderplus-logo.png" alt="Sender+ logo" className="h-8 w-auto" />
           </button>
-          <nav className="flex gap-4 text-sm">
-            <button
-              type="button"
-              onClick={goHome}
-              className="hover:text-[#73C2FB]"
-            >
+
+          <nav className="flex gap-2 text-sm sm:gap-3">
+            <button type="button" onClick={goHome} className="plush-nav-link">
               Home
             </button>
-            <button
-              type="button"
-              onClick={goTrack}
-              className="hover:text-[#73C2FB]"
-            >
+            <button type="button" onClick={goTrack} className="plush-nav-link">
               Track
             </button>
           </nav>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="flex-1 flex justify-center px-4 py-8">
-        <div className="w-full max-w-4xl bg-white rounded-xl shadow-md p-6 md:p-8">
-          {/* Header + Logo */}
-          <div className="text-center mb-6">
-            <img
-              src="/senderplus-logo.png"
-              alt="Sender+ logo"
-              className="w-56 mx-auto mb-4"
-            />
-            <h2 className="text-2xl md:text-3xl font-bold text-[#73C2FB]">
-              Send a Package
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Bridging Ghana One Package at a Time.
+      <main className="mx-auto mt-4 w-full max-w-6xl px-4 sm:px-5">
+        <div className="plush-card p-6 md:p-8">
+          <div className="mb-6 text-center md:mb-8">
+            <p className="auth-kicker">Send with confidence</p>
+            <h2 className="text-3xl font-bold text-slate-900 md:text-4xl">Send a Package</h2>
+            <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-600 md:text-base">
+              Create a premium delivery request in one flow. We&apos;ll capture sender and recipient details, then issue tracking instantly.
             </p>
           </div>
 
-          {/* Error */}
           {error && (
-            <div className="mb-4 rounded bg-red-100 text-red-700 px-4 py-2 text-sm">
+            <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
               {error}
             </div>
           )}
 
-          <form
-            onSubmit={handleSubmit}
-            encType="multipart/form-data"
-            className="space-y-6 text-sm md:text-base"
-          >
-            {/* Sender Info */}
-            <fieldset className="border border-gray-200 rounded-lg p-4">
-              <legend className="text-[#7E191B] font-semibold px-1">
-                Sender Information
-              </legend>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+          <form onSubmit={handleSubmit} encType="multipart/form-data" className="space-y-6 text-sm md:text-base">
+            <fieldset className="plush-fieldset">
+              <legend className="plush-legend">Sender Information</legend>
+              <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                    Sender Name
-                  </label>
-                  <input
-                    name="senderName"
-                    onChange={handleChange}
-                    className="input"
-                    required
-                  />
+                  <label className="plush-label">Sender Name</label>
+                  <input name="senderName" onChange={handleChange} className="auth-input" required />
                 </div>
                 <div>
-                  <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                    Phone Number
-                  </label>
+                  <label className="plush-label">Phone Number</label>
                   <input
                     name="senderPhone"
                     value={formData.senderPhone}
                     onChange={handleChange}
-                    className="input"
-                    required
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={14} // (000) 000-0000
-                    pattern="\(\d{3}\) \d{3}-\d{4}"
-                    title="Please enter a 10-digit phone number."
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                    Email
-                  </label>
-                  <input
-                    name="senderEmail"
-                    type="email"
-                    value={formData.senderEmail}
-                    onChange={handleChange}
-                    className="input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                    Address
-                  </label>
-                  <input
-                    name="senderAddress"
-                    onChange={handleChange}
-                    className="input"
-                    required
-                  />
-                </div>
-              </div>
-            </fieldset>
-
-            {/* Recipient Info */}
-            <fieldset className="border border-gray-200 rounded-lg p-4">
-              <legend className="text-[#7E191B] font-semibold px-1">
-                Recipient Information
-              </legend>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                <div>
-                  <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                    Recipient Name
-                  </label>
-                  <input
-                    name="recipientName"
-                    onChange={handleChange}
-                    className="input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                    Phone Number
-                  </label>
-                  <input
-                    name="recipientPhone"
-                    value={formData.recipientPhone}
-                    onChange={handleChange}
-                    className="input"
+                    className="auth-input"
                     required
                     type="tel"
                     inputMode="numeric"
@@ -297,120 +199,82 @@ const SubmitPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                    Email (optional)
-                  </label>
-                  <input
-                    name="recipientEmail"
-                    type="email"
-                    onChange={handleChange}
-                    className="input"
-                  />
+                  <label className="plush-label">Email</label>
+                  <input name="senderEmail" type="email" value={formData.senderEmail} onChange={handleChange} className="auth-input" required />
                 </div>
                 <div>
-                  <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                    Address / Campus / Hall
-                  </label>
-                  <input
-                    name="recipientAddress"
-                    onChange={handleChange}
-                    className="input"
-                    required
-                  />
+                  <label className="plush-label">Address</label>
+                  <input name="senderAddress" onChange={handleChange} className="auth-input" required />
                 </div>
               </div>
             </fieldset>
 
-            {/* Package Info */}
-            <fieldset className="border border-gray-200 rounded-lg p-4">
-              <legend className="text-[#7E191B] font-semibold px-1">
-                Package Details
-              </legend>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            <fieldset className="plush-fieldset">
+              <legend className="plush-legend">Recipient Information</legend>
+              <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                    Package Name
-                  </label>
+                  <label className="plush-label">Recipient Name</label>
+                  <input name="recipientName" onChange={handleChange} className="auth-input" required />
+                </div>
+                <div>
+                  <label className="plush-label">Phone Number</label>
                   <input
-                    name="packageName"
+                    name="recipientPhone"
+                    value={formData.recipientPhone}
                     onChange={handleChange}
-                    className="input"
+                    className="auth-input"
                     required
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={14}
+                    pattern="\(\d{3}\) \d{3}-\d{4}"
+                    title="Please enter a 10-digit phone number."
                   />
                 </div>
                 <div>
-                  <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                    Type (Box, Envelope, Document…)
-                  </label>
-                  <input
-                    name="type"
-                    onChange={handleChange}
-                    className="input"
-                    required
-                  />
+                  <label className="plush-label">Email (optional)</label>
+                  <input name="recipientEmail" type="email" onChange={handleChange} className="auth-input" />
                 </div>
                 <div>
-                  <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                    Estimated Weight (kg)
-                  </label>
-                  <input
-                    name="weight"
-                    type="number"
-                    step="0.01"
-                    onChange={handleChange}
-                    className="input"
-                    required
-                  />
+                  <label className="plush-label">Address / Campus / Hall</label>
+                  <input name="recipientAddress" onChange={handleChange} className="auth-input" required />
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset className="plush-fieldset">
+              <legend className="plush-legend">Package Details</legend>
+              <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className="plush-label">Package Name</label>
+                  <input name="packageName" onChange={handleChange} className="auth-input" required />
                 </div>
                 <div>
-                  <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                    Estimated Value (optional)
-                  </label>
-                  <input
-                    name="value"
-                    type="number"
-                    step="0.01"
-                    onChange={handleChange}
-                    className="input"
-                  />
+                  <label className="plush-label">Type (Box, Envelope, Document…)</label>
+                  <input name="type" onChange={handleChange} className="auth-input" required />
+                </div>
+                <div>
+                  <label className="plush-label">Estimated Weight (kg)</label>
+                  <input name="weight" type="number" step="0.01" onChange={handleChange} className="auth-input" required />
+                </div>
+                <div>
+                  <label className="plush-label">Estimated Value (optional)</label>
+                  <input name="value" type="number" step="0.01" onChange={handleChange} className="auth-input" />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                    Description
-                  </label>
-                  <textarea
-                    name="description"
-                    rows={3}
-                    onChange={handleChange}
-                    className="input"
-                  />
+                  <label className="plush-label">Description</label>
+                  <textarea name="description" rows={3} onChange={handleChange} className="auth-input" />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block mb-1 text-gray-700 text-xs uppercase tracking-wide">
-                    Package Photo (optional)
-                  </label>
-                  <input
-                    type="file"
-                    name="photo"
-                    accept="image/*"
-                    onChange={handleChange}
-                    className="input"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    You can upload a photo so the recipient recognizes the
-                    package more easily.
-                  </p>
+                  <label className="plush-label">Package Photo (optional)</label>
+                  <input type="file" name="photo" accept="image/*" onChange={handleChange} className="auth-input" />
+                  <p className="mt-1 text-xs text-slate-500">Upload a quick photo so the recipient can recognize the package more easily.</p>
                 </div>
               </div>
             </fieldset>
 
             <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={loading}
-                className={`bg-[#73C2FB] hover:bg-[#61B2EB] text-white font-semibold px-6 py-2 rounded-lg shadow-sm transition ${loading ? "opacity-60 cursor-not-allowed" : ""
-                  }`}
-              >
+              <button type="submit" disabled={loading} className="auth-button px-6 py-2.5">
                 {loading ? "Submitting..." : "Submit Package"}
               </button>
             </div>
