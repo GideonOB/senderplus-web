@@ -15,12 +15,25 @@ ghana_phone_validator = RegexValidator(
 
 
 class CustomerProfile(models.Model):
+    GENDER_MALE = "male"
+    GENDER_FEMALE = "female"
+    GENDER_CHOICES = [
+        (GENDER_MALE, "Male"),
+        (GENDER_FEMALE, "Female"),
+    ]
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="customer_profile",
     )
     phone_number = models.CharField(max_length=20, validators=[ghana_phone_validator])
+    street = models.CharField(max_length=255, blank=True, default="")
+    city = models.CharField(max_length=120, blank=True, default="")
+    region = models.CharField(max_length=120, blank=True, default="")
+    ghana_post_gps = models.CharField(max_length=40, blank=True, default="")
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, default="")
+    profile_picture = models.ImageField(upload_to="profiles/", blank=True, null=True)
     address = models.CharField(max_length=255)
     email_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

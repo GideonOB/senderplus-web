@@ -3,13 +3,36 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../authContext";
 
 const SignupPage = () => {
+  const GHANA_REGIONS = [
+    "Ahafo",
+    "Ashanti",
+    "Bono",
+    "Bono East",
+    "Central",
+    "Eastern",
+    "Greater Accra",
+    "North East",
+    "Northern",
+    "Oti",
+    "Savannah",
+    "Upper East",
+    "Upper West",
+    "Volta",
+    "Western",
+    "Western North",
+  ];
+
   const navigate = useNavigate();
   const { signup } = useAuth();
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
+    gender: "male",
     phone_number: "",
-    address: "",
+    street: "",
+    city: "",
+    region: "Greater Accra",
+    ghana_post_gps: "",
     email: "",
     password: "",
   });
@@ -89,6 +112,16 @@ const SignupPage = () => {
           </div>
 
           <div className="md:col-span-2">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="gender">
+              Gender
+            </label>
+            <select id="gender" className="auth-input" name="gender" value={form.gender} onChange={onChange} required>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+
+          <div className="md:col-span-2">
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="phone_number">
               Phone number
             </label>
@@ -105,10 +138,44 @@ const SignupPage = () => {
           </div>
 
           <div className="md:col-span-2">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="address">
-              Address
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="street">
+              Street address
             </label>
-            <input id="address" className="auth-input" name="address" placeholder="Street, city, landmark" value={form.address} onChange={onChange} required />
+            <input id="street" className="auth-input" name="street" placeholder="House number, street name, landmark" value={form.street} onChange={onChange} required />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="city">
+              Town / City
+            </label>
+            <input id="city" className="auth-input" name="city" placeholder="e.g. Kumasi" value={form.city} onChange={onChange} required />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="region">
+              Region
+            </label>
+            <select id="region" className="auth-input" name="region" value={form.region} onChange={onChange} required>
+              {GHANA_REGIONS.map((region) => (
+                <option key={region} value={region}>
+                  {region}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="ghana_post_gps">
+              Digital Address / GhanaPostGPS (optional)
+            </label>
+            <input
+              id="ghana_post_gps"
+              className="auth-input"
+              name="ghana_post_gps"
+              placeholder="e.g. GA-123-4567"
+              value={form.ghana_post_gps}
+              onChange={onChange}
+            />
           </div>
 
           <div className="md:col-span-2">
