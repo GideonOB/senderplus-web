@@ -56,6 +56,11 @@ const SignupPage = () => {
         {error && (
           <div className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
             {error}
+            <ul className="mt-2 list-disc pl-5 text-xs text-rose-800/90">
+              <li>Use a valid email format (example: name@example.com).</li>
+              <li>Phone must be Ghana format: 0241234567 or +233241234567.</li>
+              <li>Password must be at least 8 characters.</li>
+            </ul>
           </div>
         )}
 

@@ -63,14 +63,20 @@ const parseResponseBody = async (response) => {
 const extractErrorMessage = (data) => {
   if (!data) return "";
   if (typeof data === "string") return data;
-  if (Array.isArray(data)) return data.find((item) => typeof item === "string") || "";
 
-  const candidates = Object.entries(data).filter(([key]) => !["detail", "raw", "isNonJson"].includes(key));
-  for (const [, value] of candidates) {
-    if (typeof value === "string") return value;
-    if (Array.isArray(value)) {
-      const first = value.find((item) => typeof item === "string");
-      if (first) return first;
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      const extracted = extractErrorMessage(item);
+      if (extracted) return extracted;
+    }
+    return "";
+  }
+
+  if (typeof data === "object") {
+    const candidates = Object.entries(data).filter(([key]) => !["detail", "raw", "isNonJson"].includes(key));
+    for (const [, value] of candidates) {
+      const extracted = extractErrorMessage(value);
+      if (extracted) return extracted;
     }
   }
 
@@ -96,6 +102,18 @@ const getResponseErrorMessage = (response, data, fallbackMessage) => {
     return "Server returned a non-JSON response.";
   }
 
+  if (response.status === 400) {
+    return `${fallbackMessage} The request was rejected (400). Please double-check your form values and try again.`;
+  }
+  if (response.status === 401 || response.status === 403) {
+    return `${fallbackMessage} Authentication failed (${response.status}).`;
+  }
+  if (response.status === 404) {
+    return `${fallbackMessage} API endpoint not found (404). Please verify backend routing.`;
+  }
+  if (response.status === 429) {
+    return "Too many attempts. Please wait a moment and try again.";
+  }
   if (response.status >= 500) return "Server error. Please try again shortly.";
   return fallbackMessage;
 };
