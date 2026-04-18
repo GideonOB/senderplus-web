@@ -7,7 +7,9 @@ if (!rawApiBaseUrl) {
 export const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, "");
 
 export const apiFetch = async (path, options = {}, token = null) => {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const headers = {
+    Accept: "application/json",
     ...(options.headers || {}),
   };
 
@@ -15,7 +17,7 @@ export const apiFetch = async (path, options = {}, token = null) => {
     headers.Authorization = `Token ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${API_BASE_URL}${normalizedPath}`, {
     ...options,
     headers,
   });
