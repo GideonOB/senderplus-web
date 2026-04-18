@@ -118,6 +118,42 @@ const getResponseErrorMessage = (response, data, fallbackMessage) => {
   return fallbackMessage;
 };
 
+const extractFieldErrors = (data) => {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return {};
+
+  const result = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (["detail", "raw", "isNonJson"].includes(key)) continue;
+
+    if (typeof value === "string") {
+      result[key] = value;
+      continue;
+    }
+
+    if (Array.isArray(value)) {
+      const flattened = value
+        .map((item) => extractErrorMessage(item))
+        .filter(Boolean)
+        .join(" ");
+      if (flattened) result[key] = flattened;
+      continue;
+    }
+
+    const nested = extractErrorMessage(value);
+    if (nested) result[key] = nested;
+  }
+
+  return result;
+};
+
+const createApiError = (response, data, fallbackMessage) => {
+  const message = getResponseErrorMessage(response, data, fallbackMessage);
+  const error = new Error(message);
+  error.status = response.status;
+  error.fieldErrors = extractFieldErrors(data);
+  return error;
+};
+
 export const AuthProvider = ({ children }) => {
   const [authState, setAuthState] = useState(getInitialAuthState);
 
@@ -135,7 +171,7 @@ export const AuthProvider = ({ children }) => {
 
     const data = await parseResponseBody(response);
     if (!response.ok) {
-      throw new Error(getResponseErrorMessage(response, data, "Could not create account."));
+      throw createApiError(response, data, "Could not create account.");
     }
 
     return data;
@@ -151,7 +187,7 @@ export const AuthProvider = ({ children }) => {
 
     const data = await parseResponseBody(response);
     if (!response.ok) {
-      throw new Error(getResponseErrorMessage(response, data, "Could not sign in."));
+      throw createApiError(response, data, "Could not sign in.");
     }
 
     if (data?.token && data?.profile) {
@@ -174,7 +210,7 @@ export const AuthProvider = ({ children }) => {
 
     const data = await parseResponseBody(response);
     if (!response.ok) {
-      throw new Error(getResponseErrorMessage(response, data, "Could not send verification code."));
+      throw createApiError(response, data, "Could not send verification code.");
     }
 
     return data;
@@ -190,7 +226,7 @@ export const AuthProvider = ({ children }) => {
 
     const data = await parseResponseBody(response);
     if (!response.ok) {
-      throw new Error(getResponseErrorMessage(response, data, "Code verification failed."));
+      throw createApiError(response, data, "Code verification failed.");
     }
 
     if (data?.token && data?.profile) {
@@ -213,7 +249,7 @@ export const AuthProvider = ({ children }) => {
 
     const data = await parseResponseBody(response);
     if (!response.ok) {
-      throw new Error(getResponseErrorMessage(response, data, "Could not change password."));
+      throw createApiError(response, data, "Could not change password.");
     }
 
     return data;
@@ -224,7 +260,7 @@ export const AuthProvider = ({ children }) => {
     const response = await apiFetch("/auth/profile", { method: "GET" }, authState.token);
     const profile = await parseResponseBody(response);
     if (!response.ok) {
-      throw new Error(getResponseErrorMessage(response, profile, "Could not load profile."));
+      throw createApiError(response, profile, "Could not load profile.");
     }
     persist({ ...authState, profile });
     return profile;

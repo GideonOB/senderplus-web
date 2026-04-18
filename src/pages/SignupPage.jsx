@@ -15,6 +15,7 @@ const SignupPage = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const onChange = (e) => {
     const { name, value } = e.target;
@@ -25,6 +26,7 @@ const SignupPage = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setFieldErrors({});
     try {
       await signup(form);
       navigate("/confirm", {
@@ -35,10 +37,15 @@ const SignupPage = () => {
       });
     } catch (err) {
       setError(err.message || "Signup failed.");
+      setFieldErrors(err.fieldErrors || {});
     } finally {
       setLoading(false);
     }
   };
+
+  const emailError = fieldErrors.email || "";
+  const phoneError = fieldErrors.phone_number || "";
+  const passwordError = fieldErrors.password || "";
 
   return (
     <div className="auth-shell">
@@ -56,11 +63,13 @@ const SignupPage = () => {
         {error && (
           <div className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
             {error}
-            <ul className="mt-2 list-disc pl-5 text-xs text-rose-800/90">
-              <li>Use a valid email format (example: name@example.com).</li>
-              <li>Phone must be Ghana format: 0241234567 or +233241234567.</li>
-              <li>Password must be at least 8 characters.</li>
-            </ul>
+            {(emailError || phoneError || passwordError) && (
+              <ul className="mt-2 list-disc pl-5 text-xs text-rose-800/90">
+                {emailError && <li>Email issue: {emailError}</li>}
+                {phoneError && <li>Phone issue: {phoneError}</li>}
+                {passwordError && <li>Password issue: {passwordError}</li>}
+              </ul>
+            )}
           </div>
         )}
 
@@ -92,6 +101,7 @@ const SignupPage = () => {
               onChange={onChange}
               required
             />
+            {phoneError && <p className="mt-1 text-xs text-rose-600">{phoneError}</p>}
           </div>
 
           <div className="md:col-span-2">
@@ -106,6 +116,7 @@ const SignupPage = () => {
               Email
             </label>
             <input id="email" className="auth-input" type="email" name="email" placeholder="name@example.com" value={form.email} onChange={onChange} required />
+            {emailError && <p className="mt-1 text-xs text-rose-600">{emailError}</p>}
           </div>
 
           <div className="md:col-span-2">
@@ -113,6 +124,7 @@ const SignupPage = () => {
               Password
             </label>
             <input id="password" className="auth-input" type="password" name="password" placeholder="Minimum 8 characters" value={form.password} onChange={onChange} required />
+            {passwordError && <p className="mt-1 text-xs text-rose-600">{passwordError}</p>}
           </div>
 
           <button type="submit" disabled={loading} className="auth-button md:col-span-2 w-full">
