@@ -4,6 +4,7 @@ Django settings for senderplus_core project.
 
 import os
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
@@ -28,13 +29,40 @@ def env_list(name: str, default: str = "") -> list[str]:
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
+def normalize_host(value: str) -> str:
+    candidate = value.strip()
+    if "://" in candidate:
+        parsed = urlsplit(candidate)
+        candidate = parsed.netloc or parsed.path
+    candidate = candidate.split("/")[0].strip().rstrip(".")
+    return candidate
+
+
+def env_hosts(name: str, default: str = "") -> list[str]:
+    return [normalized for item in env_list(name, default) if (normalized := normalize_host(item))]
+
+
+def normalize_origin(value: str) -> str:
+    candidate = value.strip().rstrip("/")
+    if "://" not in candidate:
+        return candidate
+
+    parsed = urlsplit(candidate)
+    origin = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+    return origin
+
+
+def env_origins(name: str, default: str = "") -> list[str]:
+    return [normalized for item in env_list(name, default) if (normalized := normalize_origin(item))]
+
+
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise ImproperlyConfigured("SECRET_KEY environment variable must be set.")
 
 DEBUG = env_bool("DEBUG", False)
 
-ALLOWED_HOSTS = env_list("ALLOWED_HOSTS")
+ALLOWED_HOSTS = env_hosts("ALLOWED_HOSTS")
 if not DEBUG and not ALLOWED_HOSTS:
     raise ImproperlyConfigured(
         "ALLOWED_HOSTS must be set when DEBUG is False."
@@ -153,8 +181,8 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = env_bool("CORS_ALLOW_ALL_ORIGINS", False)
-CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS")
-CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
+CORS_ALLOWED_ORIGINS = env_origins("CORS_ALLOWED_ORIGINS")
+CSRF_TRUSTED_ORIGINS = env_origins("CSRF_TRUSTED_ORIGINS")
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", not DEBUG)
