@@ -39,6 +39,22 @@ Set this in your frontend host:
 
 Use `.env.example` as the template.
 
+### Troubleshooting: signup/signin returns HTML `Bad Request (400)`
+If the browser network response body is an HTML page like:
+
+```html
+<!doctype html>
+<title>Bad Request (400)</title>
+```
+
+the request reached Django, but Django rejected it before your API view ran. In production, the most common cause is backend environment config:
+
+- `ALLOWED_HOSTS` must include your Render backend hostname (e.g. `senderplus-django-api.onrender.com`)
+- `CORS_ALLOWED_ORIGINS` must include your frontend origin (e.g. `https://senderplus.netlify.app`)
+- `CSRF_TRUSTED_ORIGINS` must include your frontend origin (e.g. `https://senderplus.netlify.app`)
+
+After updating env vars on Render, redeploy the backend service.
+
 ---
 
 ## CI / automation note
