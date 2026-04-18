@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../authContext";
 import { apiFetch } from "../api";
-import femaleAvatar from "../assets/avatar-female.svg";
-import maleAvatar from "../assets/avatar-male.svg";
+import femaleAvatar from "../assets/avatar2.png";
+import maleAvatar from "../assets/avatar1.png";
 
 const GHANA_REGIONS = [
   "Ahafo",
