@@ -82,3 +82,90 @@ html[data-theme="forest"] .bg-gradient-to-b {
   background-image: none !important;
   background-color: var(--app-bg) !important;
 }
+
+/* Auth pages visual refresh */
+.auth-shell {
+  @apply relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8;
+  background: radial-gradient(circle at 10% 20%, #dbeafe 0%, #f8fafc 38%, #fdf2f8 100%);
+}
+
+.auth-orb {
+  @apply pointer-events-none absolute rounded-full opacity-70 blur-3xl;
+}
+
+.auth-orb--blue {
+  width: 20rem;
+  height: 20rem;
+  top: 2rem;
+  left: -4rem;
+  background: #60a5fa;
+}
+
+.auth-orb--pink {
+  width: 24rem;
+  height: 24rem;
+  right: -6rem;
+  bottom: -8rem;
+  background: #f472b6;
+}
+
+.auth-orb--violet {
+  width: 18rem;
+  height: 18rem;
+  top: 22%;
+  right: 28%;
+  background: #a78bfa;
+}
+
+.auth-card {
+  @apply relative z-10 rounded-3xl border border-white/60 bg-white/80 shadow-2xl backdrop-blur-xl;
+}
+
+.auth-kicker {
+  @apply mb-2 inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700;
+}
+
+.auth-input {
+  @apply w-full rounded-xl border border-slate-200 bg-white/70 px-4 py-2.5 text-slate-800 shadow-sm outline-none transition;
+}
+
+.auth-input:focus {
+  @apply border-sky-300 ring-2 ring-sky-200;
+}
+
+.auth-button {
+  @apply rounded-xl bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 px-4 py-2.5 font-semibold text-white shadow-lg transition;
+}
+
+.auth-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px -16px rgba(14, 116, 220, 0.85);
+}
+
+.auth-button:disabled {
+  @apply cursor-not-allowed opacity-70;
+}
+
+html[data-theme="dark"] .auth-shell,
+html[data-theme="forest"] .auth-shell {
+  background: var(--app-bg);
+}
+
+html[data-theme="dark"] .auth-card,
+html[data-theme="forest"] .auth-card {
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  border-color: var(--border-color);
+}
+
+html[data-theme="dark"] .auth-kicker,
+html[data-theme="forest"] .auth-kicker {
+  color: var(--app-text);
+  background: color-mix(in srgb, var(--card-bg) 60%, #60a5fa 40%);
+}
+
+html[data-theme="dark"] .auth-input,
+html[data-theme="forest"] .auth-input {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--app-text);
+}
