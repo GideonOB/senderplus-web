@@ -43,6 +43,8 @@ const ProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isEditingPhoto, setIsEditingPhoto] = useState(false);
 
   const [passwordForm, setPasswordForm] = useState({
     current_password: "",
@@ -50,7 +52,7 @@ const ProfilePage = () => {
     code: "",
   });
   const [passwordBusy, setPasswordBusy] = useState(false);
-  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState(location.state?.passwordChanged ? "Password changed successfully." : "");
   const [passwordError, setPasswordError] = useState("");
 
   const hydrateForm = (data) => {
@@ -68,12 +70,6 @@ const ProfilePage = () => {
   };
 
   useEffect(() => {
-    if (location.state?.passwordChanged) {
-      setPasswordMessage("Password changed successfully.");
-    }
-  }, [location.state]);
-
-  useEffect(() => {
     const load = async () => {
       try {
         const data = await refreshProfile();
@@ -86,31 +82,28 @@ const ProfilePage = () => {
     load();
   }, [refreshProfile]);
 
-  useEffect(() => {
-    if (profile) hydrateForm(profile);
-  }, [profile]);
-
-  useEffect(() => {
-    if (!pictureFile) return undefined;
-    const objectUrl = URL.createObjectURL(pictureFile);
-    setPicturePreview(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [pictureFile]);
-
   const displayName = `${form.first_name} ${form.last_name}`.trim() || "Customer";
+  const localPicturePreview = useMemo(() => (pictureFile ? URL.createObjectURL(pictureFile) : ""), [pictureFile]);
   const addressText = useMemo(() => {
     const bits = [form.street, form.city, form.region].filter(Boolean);
     return bits.length ? bits.join(", ") : "Address not set";
   }, [form.street, form.city, form.region]);
   const fallbackAvatar = form.gender === "female" ? femaleAvatar : maleAvatar;
-  const profileImageSrc = picturePreview || fallbackAvatar;
+  const profileImageSrc = localPicturePreview || picturePreview || fallbackAvatar;
+
+  useEffect(
+    () => () => {
+      if (localPicturePreview) URL.revokeObjectURL(localPicturePreview);
+    },
+    [localPicturePreview]
+  );
 
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const onSubmit = async (e) => {
+  const onSubmitProfile = async (e) => {
     e.preventDefault();
     setSaving(true);
     setError("");
@@ -120,7 +113,6 @@ const ProfilePage = () => {
       const payload = new FormData();
       Object.entries(form).forEach(([key, value]) => payload.append(key, value));
       payload.append("address", `${form.street}, ${form.city}, ${form.region}`);
-      if (pictureFile) payload.append("profile_picture", pictureFile);
 
       const res = await apiFetch(
         "/auth/profile",
@@ -136,14 +128,68 @@ const ProfilePage = () => {
         throw new Error(data?.detail || "Failed to update profile.");
       }
 
-      setPictureFile(null);
-      await refreshProfile();
+      const updatedProfile = await refreshProfile();
+      if (updatedProfile) hydrateForm(updatedProfile);
+      setIsEditingProfile(false);
       setMessage("Profile updated successfully.");
     } catch (err) {
       setError(err.message || "Update failed.");
     } finally {
       setSaving(false);
     }
+  };
+
+  const onSubmitProfilePhoto = async () => {
+    if (!pictureFile) {
+      setError("Please choose a photo first.");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const payload = new FormData();
+      payload.append("profile_picture", pictureFile);
+
+      const res = await apiFetch(
+        "/auth/profile",
+        {
+          method: "PATCH",
+          body: payload,
+        },
+        token
+      );
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.detail || "Failed to update profile photo.");
+      }
+
+      setPictureFile(null);
+      const updatedProfile = await refreshProfile();
+      if (updatedProfile) hydrateForm(updatedProfile);
+      setIsEditingPhoto(false);
+      setMessage("Profile photo updated successfully.");
+    } catch (err) {
+      setError(err.message || "Update failed.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onCancelProfileEdit = () => {
+    if (profile) hydrateForm(profile);
+    setError("");
+    setIsEditingProfile(false);
+  };
+
+  const onCancelPhotoEdit = () => {
+    setPictureFile(null);
+    setPicturePreview(profile?.profile_picture || "");
+    setError("");
+    setIsEditingPhoto(false);
   };
 
   const onPasswordFieldChange = (e) => {
@@ -192,7 +238,50 @@ const ProfilePage = () => {
       <div className="auth-card w-full max-w-4xl p-7 md:p-9">
         <div className="mb-8 flex flex-col gap-5 rounded-2xl border border-white/60 bg-white/45 p-5 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
-            <img src={profileImageSrc} alt={`${displayName} profile`} className="h-20 w-20 rounded-2xl border border-slate-200 object-cover shadow-sm" />
+            <div className="flex flex-col items-center gap-2">
+              <img src={profileImageSrc} alt={`${displayName} profile`} className="h-20 w-20 rounded-2xl border border-slate-200 object-cover shadow-sm" />
+              {!isEditingPhoto ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditingPhoto(true);
+                    setMessage("");
+                    setError("");
+                  }}
+                  className="text-xs font-semibold text-slate-600 underline underline-offset-4 transition hover:text-slate-900"
+                >
+                  Edit Profile Photo
+                </button>
+              ) : (
+                <div className="w-full max-w-52 space-y-2">
+                  <input
+                    id="profile_picture"
+                    className="auth-input text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-sky-100 file:px-2 file:py-1 file:text-sky-700"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setPictureFile(e.target.files?.[0] || null)}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={onSubmitProfilePhoto}
+                      disabled={saving}
+                      className="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-70"
+                    >
+                      {saving ? "Saving..." : "Save Photo"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onCancelPhotoEdit}
+                      disabled={saving}
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
             <div>
               <p className="auth-kicker">Customer profile</p>
               <h1 className="text-2xl font-bold text-slate-900">{displayName}</h1>
@@ -208,80 +297,134 @@ const ProfilePage = () => {
         {message && <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</div>}
         {error && <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
 
-        <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="first_name">
-              First name
-            </label>
-            <input id="first_name" className="auth-input" name="first_name" value={form.first_name} onChange={onChange} required />
+        <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-slate-900">Personal details</h2>
+            {!isEditingProfile && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditingProfile(true);
+                  setMessage("");
+                  setError("");
+                }}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Edit Profile
+              </button>
+            )}
           </div>
-          <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="last_name">
-              Last name
-            </label>
-            <input id="last_name" className="auth-input" name="last_name" value={form.last_name} onChange={onChange} required />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="gender">
-              Gender
-            </label>
-            <select id="gender" className="auth-input" name="gender" value={form.gender} onChange={onChange} required>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="phone_number">
-              Phone number
-            </label>
-            <input id="phone_number" className="auth-input" name="phone_number" value={form.phone_number} onChange={onChange} required />
-          </div>
-          <div className="md:col-span-2">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="street">
-              Street address
-            </label>
-            <input id="street" className="auth-input" name="street" value={form.street} onChange={onChange} required />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="city">
-              Town / City
-            </label>
-            <input id="city" className="auth-input" name="city" value={form.city} onChange={onChange} required />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="region">
-              Region
-            </label>
-            <select id="region" className="auth-input" name="region" value={form.region} onChange={onChange} required>
-              {GHANA_REGIONS.map((region) => (
-                <option key={region} value={region}>
-                  {region}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="md:col-span-2">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="ghana_post_gps">
-              Digital Address / GhanaPostGPS (optional)
-            </label>
-            <input id="ghana_post_gps" className="auth-input" name="ghana_post_gps" value={form.ghana_post_gps} onChange={onChange} />
-          </div>
-          <div className="md:col-span-2">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="profile_picture">
-              Profile picture
-            </label>
-            <input
-              id="profile_picture"
-              className="auth-input file:mr-3 file:rounded-lg file:border-0 file:bg-sky-100 file:px-3 file:py-2 file:text-sky-700"
-              type="file"
-              accept="image/*"
-              onChange={(e) => setPictureFile(e.target.files?.[0] || null)}
-            />
-          </div>
-          <button type="submit" disabled={saving} className="auth-button md:col-span-2">
-            {saving ? "Saving..." : "Save changes"}
-          </button>
-        </form>
+
+          {!isEditingProfile ? (
+            <dl className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">First name</dt>
+                <dd className="mt-1 text-base text-slate-800">{form.first_name || "Not set"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">Last name</dt>
+                <dd className="mt-1 text-base text-slate-800">{form.last_name || "Not set"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">Gender</dt>
+                <dd className="mt-1 text-base text-slate-800">{form.gender === "female" ? "Female" : "Male"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">Phone number</dt>
+                <dd className="mt-1 text-base text-slate-800">{form.phone_number || "Not set"}</dd>
+              </div>
+              <div className="md:col-span-2">
+                <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">Street address</dt>
+                <dd className="mt-1 text-base text-slate-800">{form.street || "Not set"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">Town / City</dt>
+                <dd className="mt-1 text-base text-slate-800">{form.city || "Not set"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">Region</dt>
+                <dd className="mt-1 text-base text-slate-800">{form.region || "Not set"}</dd>
+              </div>
+              <div className="md:col-span-2">
+                <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">Digital Address / GhanaPostGPS</dt>
+                <dd className="mt-1 text-base text-slate-800">{form.ghana_post_gps || "Not set"}</dd>
+              </div>
+            </dl>
+          ) : (
+            <form onSubmit={onSubmitProfile} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="first_name">
+                  First name
+                </label>
+                <input id="first_name" className="auth-input" name="first_name" value={form.first_name} onChange={onChange} required />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="last_name">
+                  Last name
+                </label>
+                <input id="last_name" className="auth-input" name="last_name" value={form.last_name} onChange={onChange} required />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="gender">
+                  Gender
+                </label>
+                <select id="gender" className="auth-input" name="gender" value={form.gender} onChange={onChange} required>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="phone_number">
+                  Phone number
+                </label>
+                <input id="phone_number" className="auth-input" name="phone_number" value={form.phone_number} onChange={onChange} required />
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="street">
+                  Street address
+                </label>
+                <input id="street" className="auth-input" name="street" value={form.street} onChange={onChange} required />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="city">
+                  Town / City
+                </label>
+                <input id="city" className="auth-input" name="city" value={form.city} onChange={onChange} required />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="region">
+                  Region
+                </label>
+                <select id="region" className="auth-input" name="region" value={form.region} onChange={onChange} required>
+                  {GHANA_REGIONS.map((region) => (
+                    <option key={region} value={region}>
+                      {region}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="ghana_post_gps">
+                  Digital Address / GhanaPostGPS (optional)
+                </label>
+                <input id="ghana_post_gps" className="auth-input" name="ghana_post_gps" value={form.ghana_post_gps} onChange={onChange} />
+              </div>
+              <div className="md:col-span-2 flex gap-2">
+                <button type="submit" disabled={saving} className="auth-button">
+                  {saving ? "Saving..." : "Save changes"}
+                </button>
+                <button
+                  type="button"
+                  onClick={onCancelProfileEdit}
+                  disabled={saving}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
 
         <div className="mt-8 border-t border-slate-200/80 pt-6">
           <h2 className="text-xl font-semibold text-slate-900">Change password</h2>
@@ -348,11 +491,7 @@ const ProfilePage = () => {
                 required
               />
             </div>
-            <button
-              type="submit"
-              disabled={passwordBusy}
-              className="auth-button"
-            >
+            <button type="submit" disabled={passwordBusy} className="auth-button">
               {passwordBusy ? "Updating..." : "Update password"}
             </button>
           </form>
