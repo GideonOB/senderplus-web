@@ -2,6 +2,27 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../authContext";
 import { apiFetch } from "../api";
+import femaleAvatar from "../assets/avatar2.png";
+import maleAvatar from "../assets/avatar1.png";
+
+const GHANA_REGIONS = [
+  "Ahafo",
+  "Ashanti",
+  "Bono",
+  "Bono East",
+  "Central",
+  "Eastern",
+  "Greater Accra",
+  "North East",
+  "Northern",
+  "Oti",
+  "Savannah",
+  "Upper East",
+  "Upper West",
+  "Volta",
+  "Western",
+  "Western North",
+];
 
 const MALE_AVATAR = "/avatar1.png";
 const FEMALE_AVATAR = "/avatar2.png";
@@ -138,6 +159,7 @@ const ProfilePage = () => {
         throw new Error(data?.detail || "Failed to update profile.");
       }
 
+      setPictureFile(null);
       await refreshProfile();
       setIsEditingProfile(false);
       setMessage("Profile updated successfully.");
