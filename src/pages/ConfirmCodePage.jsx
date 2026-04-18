@@ -38,7 +38,8 @@ const ConfirmCodePage = () => {
   const inputsRef = useRef([]);
 
   const handleChange = (index, value) => {
-    const char = value.slice(-1);
+    const numericOnly = value.replace(/\D/g, "");
+    const char = numericOnly.slice(-1);
     const updated = [...digits];
     updated[index] = char;
     setDigits(updated);
@@ -65,10 +66,11 @@ const ConfirmCodePage = () => {
 
   const handlePaste = (e) => {
     e.preventDefault();
-    const paste = e.clipboardData.getData("text").trim();
-    if (!paste) return;
+    const paste = e.clipboardData.getData("text");
+    const digitsOnly = paste.replace(/\D/g, "");
+    if (!digitsOnly) return;
 
-    const chars = paste.slice(0, CODE_LENGTH).split("");
+    const chars = digitsOnly.slice(0, CODE_LENGTH).split("");
     const updated = Array(CODE_LENGTH).fill("");
     for (let i = 0; i < chars.length; i++) {
       updated[i] = chars[i];

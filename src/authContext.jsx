@@ -60,8 +60,27 @@ const parseResponseBody = async (response) => {
   }
 };
 
+const extractErrorMessage = (data) => {
+  if (!data) return "";
+  if (typeof data === "string") return data;
+  if (Array.isArray(data)) return data.find((item) => typeof item === "string") || "";
+
+  const candidates = Object.entries(data).filter(([key]) => !["detail", "raw", "isNonJson"].includes(key));
+  for (const [, value] of candidates) {
+    if (typeof value === "string") return value;
+    if (Array.isArray(value)) {
+      const first = value.find((item) => typeof item === "string");
+      if (first) return first;
+    }
+  }
+
+  return "";
+};
+
 const getResponseErrorMessage = (response, data, fallbackMessage) => {
   if (data?.detail) return data.detail;
+  const extracted = extractErrorMessage(data);
+  if (extracted) return extracted;
 
   if (data?.isNonJson) {
     const isHtmlLike = /^\s*</.test(data.raw);
