@@ -32,6 +32,10 @@ Set these in Render for the Django API service:
 
 Use `backend/.env.example` as the template.
 
+> Note: backend settings now normalize common formatting mistakes:
+> - `ALLOWED_HOSTS` can be entered as hostnames or full URLs (e.g. both `senderplus-django-api.onrender.com` and `https://senderplus-django-api.onrender.com` are accepted).
+> - `CORS_ALLOWED_ORIGINS` / `CSRF_TRUSTED_ORIGINS` will ignore trailing slashes.
+
 ### Frontend (Netlify/Vite)
 Set this in your frontend host:
 
