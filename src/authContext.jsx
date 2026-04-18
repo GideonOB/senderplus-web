@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { apiFetch } from "./api";
+import { API_BASE_URL, apiFetch } from "./api";
 
 const AUTH_STORAGE_KEY = "senderplus-auth";
 const DEVICE_STORAGE_KEY = "senderplus-device-id";
@@ -66,7 +66,13 @@ const getResponseErrorMessage = (response, data, fallbackMessage) => {
   if (data?.isNonJson) {
     const isHtmlLike = /^\s*</.test(data.raw);
     if (isHtmlLike) {
-      return "Server returned HTML instead of JSON. Check your VITE_API_BASE_URL/backend route configuration.";
+      if (response.status === 400) {
+        return `Backend returned an HTML 400 page instead of JSON. This usually means Django blocked the request before it reached the API (check ALLOWED_HOSTS, CORS_ALLOWED_ORIGINS, and CSRF_TRUSTED_ORIGINS for ${API_BASE_URL}).`;
+      }
+      if (response.status === 403) {
+        return `Backend returned an HTML 403 page instead of JSON. Check CSRF_TRUSTED_ORIGINS and CORS_ALLOWED_ORIGINS for ${API_BASE_URL}.`;
+      }
+      return `Server returned HTML instead of JSON from ${API_BASE_URL}. Check your VITE_API_BASE_URL and backend route configuration.`;
     }
     return "Server returned a non-JSON response.";
   }
