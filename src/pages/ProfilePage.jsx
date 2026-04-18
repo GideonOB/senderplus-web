@@ -137,79 +137,126 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-8">
-      <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-md p-6 md:p-8 space-y-8">
+    <div className="auth-shell">
+      <div className="auth-orb auth-orb--blue" aria-hidden="true" />
+      <div className="auth-orb auth-orb--pink" aria-hidden="true" />
+      <div className="auth-orb auth-orb--violet" aria-hidden="true" />
+
+      <div className="auth-card w-full max-w-3xl p-7 md:p-9">
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-[#73C2FB]">My Profile</h1>
-            <button type="button" onClick={() => navigate("/home")} className="text-sm underline">Back home</button>
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="auth-kicker">Account settings</p>
+              <h1 className="text-3xl font-bold text-slate-900">My Profile</h1>
+            </div>
+            <button type="button" onClick={() => navigate("/home")} className="text-sm font-medium text-slate-600 underline underline-offset-4 transition hover:text-slate-900">
+              Back home
+            </button>
           </div>
 
-          {message && <div className="mb-3 rounded bg-green-100 text-green-700 px-3 py-2 text-sm">{message}</div>}
-          {error && <div className="mb-3 rounded bg-red-100 text-red-700 px-3 py-2 text-sm">{error}</div>}
+          {message && <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</div>}
+          {error && <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
 
-          <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input className="input" name="first_name" value={form.first_name} onChange={onChange} required />
-            <input className="input" name="last_name" value={form.last_name} onChange={onChange} required />
-            <input className="input md:col-span-2" name="phone_number" value={form.phone_number} onChange={onChange} required />
-            <input className="input md:col-span-2" name="address" value={form.address} onChange={onChange} required />
-            <button type="submit" disabled={saving} className="md:col-span-2 bg-[#73C2FB] text-white font-semibold py-2.5 rounded-lg">
+          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="first_name">
+                First name
+              </label>
+              <input id="first_name" className="auth-input" name="first_name" value={form.first_name} onChange={onChange} required />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="last_name">
+                Last name
+              </label>
+              <input id="last_name" className="auth-input" name="last_name" value={form.last_name} onChange={onChange} required />
+            </div>
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="phone_number">
+                Phone number
+              </label>
+              <input id="phone_number" className="auth-input" name="phone_number" value={form.phone_number} onChange={onChange} required />
+            </div>
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="address">
+                Address
+              </label>
+              <input id="address" className="auth-input" name="address" value={form.address} onChange={onChange} required />
+            </div>
+            <button type="submit" disabled={saving} className="auth-button md:col-span-2">
               {saving ? "Saving..." : "Save changes"}
             </button>
           </form>
         </div>
 
-        <div className="border-t pt-6">
-          <h2 className="text-xl font-semibold text-[#73C2FB] mb-2">Change password</h2>
-          <p className="text-sm text-gray-600 mb-4">Request a one-time code before changing your password.</p>
+        <div className="mt-8 border-t border-slate-200/80 pt-6">
+          <h2 className="text-xl font-semibold text-slate-900">Change password</h2>
+          <p className="mt-1 text-sm text-slate-600">Request a one-time code before changing your password.</p>
 
-          {passwordMessage && <div className="mb-3 rounded bg-green-100 text-green-700 px-3 py-2 text-sm">{passwordMessage}</div>}
-          {passwordError && <div className="mb-3 rounded bg-red-100 text-red-700 px-3 py-2 text-sm">{passwordError}</div>}
+          {passwordMessage && <div className="mb-3 mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{passwordMessage}</div>}
+          {passwordError && <div className="mb-3 mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{passwordError}</div>}
 
           <div className="mb-4">
             <button
               type="button"
               onClick={onSendPasswordCode}
               disabled={passwordBusy}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg"
+              className="rounded-xl border border-slate-200 bg-white/75 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-70"
             >
               Send verification code
             </button>
           </div>
 
           <form onSubmit={onPasswordSubmit} className="grid grid-cols-1 gap-4">
-            <input
-              className="input"
-              type="password"
-              name="current_password"
-              value={passwordForm.current_password}
-              onChange={onPasswordFieldChange}
-              placeholder="Current password"
-              required
-            />
-            <input
-              className="input"
-              type="password"
-              name="new_password"
-              value={passwordForm.new_password}
-              onChange={onPasswordFieldChange}
-              placeholder="New password (min 8 chars)"
-              required
-            />
-            <input
-              className="input"
-              type="text"
-              name="code"
-              value={passwordForm.code}
-              onChange={onPasswordFieldChange}
-              placeholder="6-digit verification code"
-              maxLength={6}
-              required
-            />
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="current_password">
+                Current password
+              </label>
+              <input
+                id="current_password"
+                className="auth-input"
+                type="password"
+                name="current_password"
+                value={passwordForm.current_password}
+                onChange={onPasswordFieldChange}
+                placeholder="Current password"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="new_password">
+                New password
+              </label>
+              <input
+                id="new_password"
+                className="auth-input"
+                type="password"
+                name="new_password"
+                value={passwordForm.new_password}
+                onChange={onPasswordFieldChange}
+                placeholder="New password (min 8 chars)"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="password_code">
+                Verification code
+              </label>
+              <input
+                id="password_code"
+                className="auth-input"
+                type="text"
+                name="code"
+                value={passwordForm.code}
+                onChange={onPasswordFieldChange}
+                placeholder="6-digit verification code"
+                maxLength={6}
+                required
+              />
+            </div>
             <button
               type="submit"
               disabled={passwordBusy}
-              className="bg-[#73C2FB] text-white font-semibold py-2.5 rounded-lg"
+              className="auth-button"
             >
               {passwordBusy ? "Updating..." : "Update password"}
             </button>
