@@ -49,6 +49,32 @@ const getInitialAuthState = () => {
   }
 };
 
+const parseResponseBody = async (response) => {
+  const raw = await response.text();
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { raw, isNonJson: true };
+  }
+};
+
+const getResponseErrorMessage = (response, data, fallbackMessage) => {
+  if (data?.detail) return data.detail;
+
+  if (data?.isNonJson) {
+    const isHtmlLike = /^\s*</.test(data.raw);
+    if (isHtmlLike) {
+      return "Server returned HTML instead of JSON. Check your VITE_API_BASE_URL/backend route configuration.";
+    }
+    return "Server returned a non-JSON response.";
+  }
+
+  if (response.status >= 500) return "Server error. Please try again shortly.";
+  return fallbackMessage;
+};
+
 export const AuthProvider = ({ children }) => {
   const [authState, setAuthState] = useState(getInitialAuthState);
 
@@ -64,9 +90,9 @@ export const AuthProvider = ({ children }) => {
       body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
+    const data = await parseResponseBody(response);
     if (!response.ok) {
-      throw new Error(data?.detail || "Could not create account.");
+      throw new Error(getResponseErrorMessage(response, data, "Could not create account."));
     }
 
     return data;
@@ -80,12 +106,12 @@ export const AuthProvider = ({ children }) => {
       body: JSON.stringify({ ...payload, device_id: deviceId }),
     });
 
-    const data = await response.json();
+    const data = await parseResponseBody(response);
     if (!response.ok) {
-      throw new Error(data?.detail || "Could not sign in.");
+      throw new Error(getResponseErrorMessage(response, data, "Could not sign in."));
     }
 
-    if (data.token && data.profile) {
+    if (data?.token && data?.profile) {
       persist({ token: data.token, profile: data.profile, isDemoMode: false });
     }
 
@@ -103,9 +129,9 @@ export const AuthProvider = ({ children }) => {
       authState.token
     );
 
-    const data = await response.json();
+    const data = await parseResponseBody(response);
     if (!response.ok) {
-      throw new Error(data?.detail || "Could not send verification code.");
+      throw new Error(getResponseErrorMessage(response, data, "Could not send verification code."));
     }
 
     return data;
@@ -119,12 +145,12 @@ export const AuthProvider = ({ children }) => {
       body: JSON.stringify({ email, code, purpose, challenge_token, device_id: deviceId }),
     });
 
-    const data = await response.json();
+    const data = await parseResponseBody(response);
     if (!response.ok) {
-      throw new Error(data?.detail || "Code verification failed.");
+      throw new Error(getResponseErrorMessage(response, data, "Code verification failed."));
     }
 
-    if (data.token && data.profile) {
+    if (data?.token && data?.profile) {
       persist({ token: data.token, profile: data.profile, isDemoMode: false });
     }
 
@@ -142,9 +168,9 @@ export const AuthProvider = ({ children }) => {
       authState.token
     );
 
-    const data = await response.json();
+    const data = await parseResponseBody(response);
     if (!response.ok) {
-      throw new Error(data?.detail || "Could not change password.");
+      throw new Error(getResponseErrorMessage(response, data, "Could not change password."));
     }
 
     return data;
@@ -153,10 +179,10 @@ export const AuthProvider = ({ children }) => {
   const refreshProfile = useCallback(async () => {
     if (!authState.token) return null;
     const response = await apiFetch("/auth/profile", { method: "GET" }, authState.token);
+    const profile = await parseResponseBody(response);
     if (!response.ok) {
-      throw new Error("Could not load profile.");
+      throw new Error(getResponseErrorMessage(response, profile, "Could not load profile."));
     }
-    const profile = await response.json();
     persist({ ...authState, profile });
     return profile;
   }, [authState, persist]);
