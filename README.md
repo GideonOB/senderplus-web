@@ -43,6 +43,18 @@ Set this in your frontend host:
 
 Use `.env.example` as the template.
 
+
+### Troubleshooting: Render build fails during `python manage.py migrate` with `failed to resolve host`
+If the Render build log fails at the migrate step with an error like:
+
+```text
+django.db.utils.OperationalError: failed to resolve host 'dpg-...-a': [Errno -2] Name or service not known
+```
+
+Django installed successfully, but the build container could not resolve the PostgreSQL host from `DATABASE_URL`. On Render, hostnames ending in `-a` are typically internal database hostnames, and they only resolve from Render services in the same private network/region as the database. Check that the Django API service is using the correct Render Postgres **Internal Database URL** for a database attached to that service, or switch to the database **External Database URL** if the service cannot access the private hostname. Also verify the database still exists and that the `DATABASE_URL` value was not copied from an old/deleted database.
+
+After updating `DATABASE_URL`, redeploy the backend service so the build command can complete `python manage.py migrate`.
+
 ### Troubleshooting: signup/signin returns HTML `Bad Request (400)`
 If the browser network response body is an HTML page like:
 
