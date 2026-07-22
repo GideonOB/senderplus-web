@@ -8,14 +8,12 @@ const AuthContext = createContext({
   token: null,
   profile: null,
   isAuthenticated: false,
-  isDemoMode: false,
   signup: async () => {},
   signin: async () => {},
   sendCode: async () => {},
   verifyCode: async () => {},
   changePassword: async () => {},
   logout: () => {},
-  setDemoMode: () => {},
   refreshProfile: async () => {},
 });
 
@@ -37,15 +35,14 @@ const getDeviceId = () => {
 const getInitialAuthState = () => {
   try {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!raw) return { token: null, profile: null, isDemoMode: false };
+    if (!raw) return { token: null, profile: null };
     const parsed = JSON.parse(raw);
     return {
       token: parsed.token || null,
       profile: parsed.profile || null,
-      isDemoMode: Boolean(parsed.isDemoMode),
     };
   } catch {
-    return { token: null, profile: null, isDemoMode: false };
+    return { token: null, profile: null };
   }
 };
 
@@ -191,7 +188,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     if (data?.token && data?.profile) {
-      persist({ token: data.token, profile: data.profile, isDemoMode: false });
+      persist({ token: data.token, profile: data.profile });
     }
 
     return data;
@@ -235,7 +232,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     if (data?.token && data?.profile) {
-      persist({ token: data.token, profile: data.profile, isDemoMode: false });
+      persist({ token: data.token, profile: data.profile });
     }
 
     return data;
@@ -271,12 +268,8 @@ export const AuthProvider = ({ children }) => {
     return profile;
   }, [authState, persist]);
 
-  const setDemoMode = useCallback((isDemoMode) => {
-    persist({ ...authState, isDemoMode });
-  }, [authState, persist]);
-
   const logout = useCallback(() => {
-    persist({ token: null, profile: null, isDemoMode: false });
+    persist({ token: null, profile: null });
   }, [persist]);
 
   const value = useMemo(
@@ -284,17 +277,15 @@ export const AuthProvider = ({ children }) => {
       token: authState.token,
       profile: authState.profile,
       isAuthenticated: Boolean(authState.token),
-      isDemoMode: authState.isDemoMode,
       signup,
       signin,
       sendCode,
       verifyCode,
       changePassword,
       logout,
-      setDemoMode,
       refreshProfile,
     }),
-    [authState, signup, signin, sendCode, verifyCode, changePassword, logout, setDemoMode, refreshProfile]
+    [authState, signup, signin, sendCode, verifyCode, changePassword, logout, refreshProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
