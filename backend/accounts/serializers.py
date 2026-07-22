@@ -5,7 +5,6 @@ from rest_framework import serializers
 
 from .models import CustomerProfile, EmailVerificationCode
 
-
 User = get_user_model()
 
 ghana_phone_validator = RegexValidator(
@@ -83,11 +82,15 @@ class SignupSerializer(serializers.Serializer):
     street = serializers.CharField(required=True, allow_blank=False, max_length=255)
     city = serializers.CharField(required=True, allow_blank=False, max_length=120)
     region = serializers.ChoiceField(choices=GHANA_REGIONS)
-    ghana_post_gps = serializers.CharField(required=False, allow_blank=True, max_length=40)
+    ghana_post_gps = serializers.CharField(
+        required=False, allow_blank=True, max_length=40
+    )
 
     def validate_email(self, value):
         if User.objects.filter(email__iexact=value).exists():
-            raise serializers.ValidationError("An account with this email already exists.")
+            raise serializers.ValidationError(
+                "An account with this email already exists."
+            )
         return value
 
     def create(self, validated_data):
@@ -124,7 +127,7 @@ class SigninSerializer(serializers.Serializer):
         if not user:
             raise serializers.ValidationError("Invalid email or password.")
         attrs["user"] = user
-        attrs["device_id"] = attrs.get("device_id", "").strip()
+        attrs["device_id"] = (attrs.get("device_id") or "").strip()
         return attrs
 
 
@@ -147,12 +150,16 @@ class SendCodeSerializer(serializers.Serializer):
 
         if purpose == EmailVerificationCode.PURPOSE_PASSWORD_CHANGE:
             if not request or not request.user or not request.user.is_authenticated:
-                raise serializers.ValidationError("Authentication required for password change code.")
+                raise serializers.ValidationError(
+                    "Authentication required for password change code."
+                )
             attrs["user"] = request.user
             return attrs
 
         if not email:
-            raise serializers.ValidationError("Email is required for this verification flow.")
+            raise serializers.ValidationError(
+                "Email is required for this verification flow."
+            )
 
         try:
             user = User.objects.get(email__iexact=email)
@@ -176,14 +183,18 @@ class VerifyCodeSerializer(serializers.Serializer):
         required=False,
         default=EmailVerificationCode.PURPOSE_SIGNUP,
     )
-    challenge_token = serializers.CharField(required=False, allow_blank=True, max_length=64)
-    device_id = serializers.CharField(required=False, allow_blank=True, max_length=128)
+    challenge_token = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, max_length=64
+    )
+    device_id = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, max_length=128
+    )
 
     def validate(self, attrs):
         email = attrs.get("email", "").lower()
         code = attrs.get("code")
         purpose = attrs.get("purpose", EmailVerificationCode.PURPOSE_SIGNUP)
-        challenge_token = attrs.get("challenge_token", "").strip()
+        challenge_token = (attrs.get("challenge_token") or "").strip()
 
         try:
             user = User.objects.get(email__iexact=email)
@@ -207,7 +218,7 @@ class VerifyCodeSerializer(serializers.Serializer):
         attrs["verification"] = verification
         attrs["user"] = user
         attrs["purpose"] = purpose
-        attrs["device_id"] = attrs.get("device_id", "").strip()
+        attrs["device_id"] = (attrs.get("device_id") or "").strip()
         return attrs
 
 
@@ -235,7 +246,9 @@ class PasswordChangeSerializer(serializers.Serializer):
             .first()
         )
         if not verification or not verification.is_valid():
-            raise serializers.ValidationError("Invalid or expired password change code.")
+            raise serializers.ValidationError(
+                "Invalid or expired password change code."
+            )
 
         attrs["verification"] = verification
         return attrs

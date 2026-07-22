@@ -218,10 +218,15 @@ export const AuthProvider = ({ children }) => {
 
   const verifyCode = useCallback(async ({ email, code, purpose, challenge_token }) => {
     const deviceId = getDeviceId();
+    const payload = { email, code, purpose, device_id: deviceId };
+    if (challenge_token) {
+      payload.challenge_token = challenge_token;
+    }
+
     const response = await apiFetch("/auth/verify-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, code, purpose, challenge_token, device_id: deviceId }),
+      body: JSON.stringify(payload),
     });
 
     const data = await parseResponseBody(response);
