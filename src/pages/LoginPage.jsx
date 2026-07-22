@@ -5,7 +5,7 @@ import { useAuth } from "../authContext";
 const LoginPage = () => {
   const navigate = useNavigate();
   const { signin } = useAuth();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -15,11 +15,11 @@ const LoginPage = () => {
     setLoading(true);
     setError("");
     try {
-      const data = await signin({ email, password });
+      const data = await signin({ username: identifier, password });
       if (data.requires_otp) {
         navigate("/confirm", {
           state: {
-            email,
+            email: data.email || identifier,
             purpose: "signin_device",
             challenge_token: data.challenge_token,
           },
@@ -58,16 +58,16 @@ const LoginPage = () => {
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="email">
-              Email
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="identifier">
+              Username or email
             </label>
             <input
-              id="email"
+              id="identifier"
               className="auth-input"
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              placeholder="username or name@example.com"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
             />
           </div>

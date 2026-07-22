@@ -5,7 +5,6 @@ from rest_framework import serializers
 
 from .models import CustomerProfile, EmailVerificationCode
 
-
 User = get_user_model()
 
 ghana_phone_validator = RegexValidator(
@@ -36,6 +35,7 @@ GHANA_REGIONS = [
 class CustomerProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source="user.first_name", required=False)
     last_name = serializers.CharField(source="user.last_name", required=False)
+    username = serializers.CharField(source="user.username", read_only=True)
     email = serializers.EmailField(source="user.email", read_only=True)
     profile_picture = serializers.ImageField(required=False, allow_null=True)
 
@@ -44,6 +44,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
         fields = [
             "first_name",
             "last_name",
+            "username",
             "email",
             "gender",
             "phone_number",
@@ -74,6 +75,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
 
 
 class SignupSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True, allow_blank=False, max_length=150)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
     first_name = serializers.CharField(required=True, allow_blank=False)
@@ -83,18 +85,30 @@ class SignupSerializer(serializers.Serializer):
     street = serializers.CharField(required=True, allow_blank=False, max_length=255)
     city = serializers.CharField(required=True, allow_blank=False, max_length=120)
     region = serializers.ChoiceField(choices=GHANA_REGIONS)
-    ghana_post_gps = serializers.CharField(required=False, allow_blank=True, max_length=40)
+    ghana_post_gps = serializers.CharField(
+        required=False, allow_blank=True, max_length=40
+    )
+
+    def validate_username(self, value):
+        username = value.strip()
+        if User.objects.filter(username__iexact=username).exists():
+            raise serializers.ValidationError(
+                "An account with this username already exists."
+            )
+        return username
 
     def validate_email(self, value):
-        if User.objects.filter(email__iexact=value).exists():
-            raise serializers.ValidationError("An account with this email already exists.")
-        return value
+        email = value.lower().strip()
+        if User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError(
+                "An account with this email already exists."
+            )
+        return email
 
     def create(self, validated_data):
-        email = validated_data["email"].lower()
         user = User.objects.create_user(
-            username=email,
-            email=email,
+            username=validated_data["username"],
+            email=validated_data["email"],
             password=validated_data["password"],
             first_name=validated_data["first_name"],
             last_name=validated_data["last_name"],
@@ -113,18 +127,28 @@ class SignupSerializer(serializers.Serializer):
 
 
 class SigninSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    username = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    email = serializers.EmailField(required=False)
     password = serializers.CharField(write_only=True)
     device_id = serializers.CharField(required=False, allow_blank=True, max_length=128)
 
     def validate(self, attrs):
-        email = attrs.get("email", "").lower()
+        identifier = (attrs.get("username") or attrs.get("email") or "").strip()
         password = attrs.get("password")
-        user = authenticate(username=email, password=password)
+
+        if not identifier:
+            raise serializers.ValidationError("Username or email is required.")
+
+        matched_user = (
+            User.objects.filter(email__iexact=identifier).first()
+            or User.objects.filter(username__iexact=identifier).first()
+        )
+        username = matched_user.get_username() if matched_user else identifier
+        user = authenticate(username=username, password=password)
         if not user:
             raise serializers.ValidationError("Invalid email or password.")
         attrs["user"] = user
-        attrs["device_id"] = attrs.get("device_id", "").strip()
+        attrs["device_id"] = (attrs.get("device_id") or "").strip()
         return attrs
 
 
@@ -147,12 +171,16 @@ class SendCodeSerializer(serializers.Serializer):
 
         if purpose == EmailVerificationCode.PURPOSE_PASSWORD_CHANGE:
             if not request or not request.user or not request.user.is_authenticated:
-                raise serializers.ValidationError("Authentication required for password change code.")
+                raise serializers.ValidationError(
+                    "Authentication required for password change code."
+                )
             attrs["user"] = request.user
             return attrs
 
         if not email:
-            raise serializers.ValidationError("Email is required for this verification flow.")
+            raise serializers.ValidationError(
+                "Email is required for this verification flow."
+            )
 
         try:
             user = User.objects.get(email__iexact=email)
@@ -176,14 +204,18 @@ class VerifyCodeSerializer(serializers.Serializer):
         required=False,
         default=EmailVerificationCode.PURPOSE_SIGNUP,
     )
-    challenge_token = serializers.CharField(required=False, allow_blank=True, max_length=64)
-    device_id = serializers.CharField(required=False, allow_blank=True, max_length=128)
+    challenge_token = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, max_length=64
+    )
+    device_id = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, max_length=128
+    )
 
     def validate(self, attrs):
         email = attrs.get("email", "").lower()
         code = attrs.get("code")
         purpose = attrs.get("purpose", EmailVerificationCode.PURPOSE_SIGNUP)
-        challenge_token = attrs.get("challenge_token", "").strip()
+        challenge_token = (attrs.get("challenge_token") or "").strip()
 
         try:
             user = User.objects.get(email__iexact=email)
@@ -207,7 +239,7 @@ class VerifyCodeSerializer(serializers.Serializer):
         attrs["verification"] = verification
         attrs["user"] = user
         attrs["purpose"] = purpose
-        attrs["device_id"] = attrs.get("device_id", "").strip()
+        attrs["device_id"] = (attrs.get("device_id") or "").strip()
         return attrs
 
 
@@ -235,7 +267,9 @@ class PasswordChangeSerializer(serializers.Serializer):
             .first()
         )
         if not verification or not verification.is_valid():
-            raise serializers.ValidationError("Invalid or expired password change code.")
+            raise serializers.ValidationError(
+                "Invalid or expired password change code."
+            )
 
         attrs["verification"] = verification
         return attrs

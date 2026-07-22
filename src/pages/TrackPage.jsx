@@ -2,7 +2,8 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { API_BASE_URL } from "../api";
+import { API_BASE_URL, apiFetch } from "../api";
+import { useAuth } from "../authContext";
 
 const STATUS_STEPS = [
   "Waiting for package to reach bus station",
@@ -14,6 +15,7 @@ const STATUS_STEPS = [
 const TrackPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { token } = useAuth();
 
   const initialTrackingId = location.state?.trackingId || "";
   const [trackingIdInput, setTrackingIdInput] = useState(initialTrackingId);
@@ -23,6 +25,7 @@ const TrackPage = () => {
   const [error, setError] = useState("");
 
   const goHome = () => navigate("/home");
+  const goAccount = () => navigate("/profile");
 
   const handleFetch = async (id) => {
     const trimmed = id.trim();
@@ -68,13 +71,18 @@ const TrackPage = () => {
     setAdvancing(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE_URL}/advance-status/${pkg.tracking_id}`, {
-        method: "POST",
-      });
+      const res = await apiFetch(
+        `/advance-status/${pkg.tracking_id}`,
+        { method: "POST" },
+        token
+      );
       if (!res.ok) {
         const txt = await res.text();
         console.error("Advance status error:", res.status, txt);
-        throw new Error("Could not advance package status (demo).");
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("Only admin users can advance package status. Please log in with an admin account.");
+        }
+        throw new Error("Could not advance package status.");
       }
       const data = await res.json();
       setPkg(data);
@@ -157,7 +165,7 @@ const TrackPage = () => {
                     disabled={advancing}
                     className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {advancing ? "Updating status..." : "Advance Status (demo)"}
+                    {advancing ? "Updating status..." : "Advance Status"}
                   </button>
                 </div>
               </div>
@@ -257,7 +265,7 @@ const TrackPage = () => {
 
           <button
             type="button"
-            onClick={() => alert("My Account (demo) – authentication coming soon.")}
+            onClick={goAccount}
             className="flex flex-col items-center text-xs font-medium text-slate-500 transition hover:text-sky-600"
           >
             <span className="text-lg">👤</span>

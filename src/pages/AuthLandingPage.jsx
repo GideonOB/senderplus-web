@@ -1,25 +1,15 @@
 // src/pages/AuthLandingPage.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../authContext";
 
 const AuthLandingPage = () => {
     const navigate = useNavigate();
-    const { setDemoMode } = useAuth();
-
     const handleLogin = () => {
-        setDemoMode(false);
         navigate("/login");
     };
 
     const handleSignUp = () => {
-        setDemoMode(false);
         navigate("/signup");
-    };
-
-    const handleSkip = () => {
-        setDemoMode(true);
-        navigate("/home");
     };
 
     return (
@@ -53,16 +43,6 @@ const AuthLandingPage = () => {
                         className="w-full border border-white/80 text-white font-semibold py-2.5 rounded-full hover:bg-white/10 transition"
                     >
                         Sign Up
-                    </button>
-                </div>
-
-                <div className="mt-6">
-                    <button
-                        type="button"
-                        onClick={handleSkip}
-                        className="text-xs text-white/80 underline underline-offset-4 hover:text-white"
-                    >
-                        Skip (demo)
                     </button>
                 </div>
             </div>

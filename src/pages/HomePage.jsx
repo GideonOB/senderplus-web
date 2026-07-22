@@ -8,7 +8,7 @@ const HomePage = () => {
     const navigate = useNavigate();
     const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
     const { theme, setTheme } = useTheme();
-    const { isDemoMode, logout } = useAuth();
+    const { logout } = useAuth();
 
     const goHome = () => navigate("/home");
     const goSend = () => navigate("/submit");
@@ -17,10 +17,6 @@ const HomePage = () => {
     const goAccount = () => navigate("/profile");
 
     const handleAuthAction = () => {
-        if (isDemoMode) {
-            navigate("/");
-            return;
-        }
         logout();
         navigate("/login");
     };
@@ -141,7 +137,7 @@ const HomePage = () => {
                             onClick={handleAuthAction}
                             className="mt-4 text-xs underline text-gray-500 hover:text-gray-700"
                         >
-                            {isDemoMode ? "Exit demo mode" : "Log out"}
+                            Log out
                         </button>
                     </div>
 

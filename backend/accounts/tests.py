@@ -14,17 +14,22 @@ class AccountsApiTests(TestCase):
     def test_signup_creates_user_profile_and_requires_verification(self):
         payload = {
             "email": "newuser@example.com",
+            "username": "newuser",
             "password": "securepass123",
             "first_name": "Ama",
             "last_name": "Mensah",
+            "gender": CustomerProfile.GENDER_FEMALE,
             "phone_number": "0241234567",
-            "address": "Legon Hall, University of Ghana",
+            "street": "Legon Hall",
+            "city": "Accra",
+            "region": "Greater Accra",
         }
 
         response = self.client.post("/auth/signup", payload)
 
         self.assertEqual(response.status_code, 201)
         user = self.user_model.objects.get(email="newuser@example.com")
+        self.assertEqual(user.username, "newuser")
         self.assertTrue(
             EmailVerificationCode.objects.filter(
                 user=user, purpose=EmailVerificationCode.PURPOSE_SIGNUP
@@ -36,11 +41,15 @@ class AccountsApiTests(TestCase):
     def test_verify_signup_code_returns_token(self):
         payload = {
             "email": "verified@example.com",
+            "username": "verifieduser",
             "password": "securepass123",
             "first_name": "Ama",
             "last_name": "Mensah",
+            "gender": CustomerProfile.GENDER_FEMALE,
             "phone_number": "0241234567",
-            "address": "Legon Hall, University of Ghana",
+            "street": "Legon Hall",
+            "city": "Accra",
+            "region": "Greater Accra",
         }
         self.client.post("/auth/signup", payload)
         user = self.user_model.objects.get(email="verified@example.com")
@@ -59,6 +68,36 @@ class AccountsApiTests(TestCase):
         self.assertIn("token", verify_response.data)
         profile = CustomerProfile.objects.get(user=user)
         self.assertTrue(profile.email_verified)
+
+    def test_verify_signup_code_accepts_null_challenge_token(self):
+        user = self.user_model.objects.create_user(
+            username="null-token@example.com",
+            email="null-token@example.com",
+            password="securepass123",
+        )
+        CustomerProfile.objects.create(
+            user=user,
+            phone_number="0241234567",
+            address="Accra",
+            email_verified=False,
+        )
+        code = EmailVerificationCode.create_for_user(
+            user=user, purpose=EmailVerificationCode.PURPOSE_SIGNUP
+        )
+
+        verify_response = self.client.post(
+            "/auth/verify-code",
+            {
+                "email": "null-token@example.com",
+                "code": code.code,
+                "purpose": EmailVerificationCode.PURPOSE_SIGNUP,
+                "challenge_token": None,
+            },
+            format="json",
+        )
+
+        self.assertEqual(verify_response.status_code, 200)
+        self.assertIn("token", verify_response.data)
 
     def test_signin_requires_otp_for_new_device_then_trusts_it(self):
         user = self.user_model.objects.create_user(
@@ -99,7 +138,9 @@ class AccountsApiTests(TestCase):
             },
         )
         self.assertEqual(verify_response.status_code, 200)
-        self.assertTrue(TrustedDevice.objects.filter(user=user, device_id="device-1").exists())
+        self.assertTrue(
+            TrustedDevice.objects.filter(user=user, device_id="device-1").exists()
+        )
 
         trusted_signin = self.client.post(
             "/auth/signin",
@@ -111,6 +152,69 @@ class AccountsApiTests(TestCase):
         )
         self.assertEqual(trusted_signin.status_code, 200)
         self.assertIn("token", trusted_signin.data)
+
+    def test_signin_accepts_username_or_email_identifier(self):
+        user = self.user_model.objects.create_user(
+            username="campusrunner",
+            email="runner@example.com",
+            password="securepass123",
+        )
+        CustomerProfile.objects.create(
+            user=user,
+            phone_number="0241234567",
+            address="Kumasi",
+            email_verified=True,
+        )
+
+        username_response = self.client.post(
+            "/auth/signin",
+            {
+                "username": "campusrunner",
+                "password": "securepass123",
+                "device_id": "username-device",
+            },
+        )
+        self.assertEqual(username_response.status_code, 200)
+        self.assertTrue(username_response.data["requires_otp"])
+        self.assertEqual(username_response.data["email"], "runner@example.com")
+
+        email_response = self.client.post(
+            "/auth/signin",
+            {
+                "username": "runner@example.com",
+                "password": "securepass123",
+                "device_id": "email-device",
+            },
+        )
+        self.assertEqual(email_response.status_code, 200)
+        self.assertTrue(email_response.data["requires_otp"])
+
+    def test_signin_accepts_email_for_staff_user_with_different_username(self):
+        user = self.user_model.objects.create_user(
+            username="admin-user",
+            email="admin@example.com",
+            password="securepass123",
+            is_staff=True,
+            is_superuser=True,
+        )
+
+        signin_response = self.client.post(
+            "/auth/signin",
+            {
+                "email": "admin@example.com",
+                "password": "securepass123",
+                "device_id": "admin-device",
+            },
+        )
+
+        self.assertEqual(signin_response.status_code, 200)
+        self.assertTrue(signin_response.data["requires_otp"])
+        self.assertEqual(signin_response.data["email"], "admin@example.com")
+        self.assertTrue(
+            EmailVerificationCode.objects.filter(
+                user=user, purpose=EmailVerificationCode.PURPOSE_SIGNIN_DEVICE
+            ).exists()
+        )
 
     def test_password_change_requires_code(self):
         user = self.user_model.objects.create_user(
@@ -156,7 +260,6 @@ class AccountsApiTests(TestCase):
 
         user.refresh_from_db()
         self.assertTrue(user.check_password("newsecurepass123"))
-
 
     def test_verify_code_rejects_wrong_challenge_token(self):
         user = self.user_model.objects.create_user(
@@ -229,15 +332,18 @@ class AccountsApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
-
     def test_end_to_end_auth_journey(self):
         signup_payload = {
             "email": "journey@example.com",
+            "username": "journeyuser",
             "password": "securepass123",
             "first_name": "Esi",
             "last_name": "Boateng",
+            "gender": CustomerProfile.GENDER_FEMALE,
             "phone_number": "0241234567",
-            "address": "Accra",
+            "street": "Ring Road",
+            "city": "Accra",
+            "region": "Greater Accra",
         }
         signup_response = self.client.post("/auth/signup", signup_payload)
         self.assertEqual(signup_response.status_code, 201)
@@ -305,9 +411,9 @@ class AccountsApiTests(TestCase):
         trusted_signin = self.client.post(
             "/auth/signin",
             {
-                "email": "user@example.com",
-                "password": "securepass123",
-                "device_id": "device-1",
+                "email": "journey@example.com",
+                "password": "newsecurepass123",
+                "device_id": "journey-device",
             },
         )
         self.assertEqual(trusted_signin.status_code, 200)

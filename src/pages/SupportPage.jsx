@@ -7,9 +7,7 @@ const SupportPage = () => {
 
     const goHome = () => navigate("/home");
     const goTrack = () => navigate("/track");
-    const goAccount = () => {
-        alert("My Account (demo) – coming soon.");
-    };
+    const goAccount = () => navigate("/profile");
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col pb-16">
@@ -36,9 +34,8 @@ const SupportPage = () => {
                         We’re here to help
                     </h2>
                     <p className="text-sm text-gray-600 mb-4">
-                        For demo purposes, these are sample support channels. In a live
-                        deployment, Sender+ will offer WhatsApp, in-app chat, and phone
-                        support for students and families.
+                        Contact Sender+ support for help with package submissions,
+                        tracking updates, account access, or delivery questions.
                     </p>
 
                     <div className="space-y-4 text-sm">
