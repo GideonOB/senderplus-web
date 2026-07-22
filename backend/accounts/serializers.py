@@ -35,6 +35,7 @@ GHANA_REGIONS = [
 class CustomerProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source="user.first_name", required=False)
     last_name = serializers.CharField(source="user.last_name", required=False)
+    username = serializers.CharField(source="user.username", read_only=True)
     email = serializers.EmailField(source="user.email", read_only=True)
     profile_picture = serializers.ImageField(required=False, allow_null=True)
 
@@ -43,6 +44,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
         fields = [
             "first_name",
             "last_name",
+            "username",
             "email",
             "gender",
             "phone_number",
@@ -73,6 +75,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
 
 
 class SignupSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True, allow_blank=False, max_length=150)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
     first_name = serializers.CharField(required=True, allow_blank=False)
@@ -86,18 +89,26 @@ class SignupSerializer(serializers.Serializer):
         required=False, allow_blank=True, max_length=40
     )
 
+    def validate_username(self, value):
+        username = value.strip()
+        if User.objects.filter(username__iexact=username).exists():
+            raise serializers.ValidationError(
+                "An account with this username already exists."
+            )
+        return username
+
     def validate_email(self, value):
-        if User.objects.filter(email__iexact=value).exists():
+        email = value.lower().strip()
+        if User.objects.filter(email__iexact=email).exists():
             raise serializers.ValidationError(
                 "An account with this email already exists."
             )
-        return value
+        return email
 
     def create(self, validated_data):
-        email = validated_data["email"].lower()
         user = User.objects.create_user(
-            username=email,
-            email=email,
+            username=validated_data["username"],
+            email=validated_data["email"],
             password=validated_data["password"],
             first_name=validated_data["first_name"],
             last_name=validated_data["last_name"],
@@ -116,20 +127,23 @@ class SignupSerializer(serializers.Serializer):
 
 
 class SigninSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    username = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    email = serializers.EmailField(required=False)
     password = serializers.CharField(write_only=True)
     device_id = serializers.CharField(required=False, allow_blank=True, max_length=128)
 
     def validate(self, attrs):
-        email = attrs.get("email", "").lower()
+        identifier = (attrs.get("username") or attrs.get("email") or "").strip()
         password = attrs.get("password")
 
-        try:
-            matched_user = User.objects.get(email__iexact=email)
-        except User.DoesNotExist:
-            matched_user = None
+        if not identifier:
+            raise serializers.ValidationError("Username or email is required.")
 
-        username = matched_user.get_username() if matched_user else email
+        matched_user = (
+            User.objects.filter(email__iexact=identifier).first()
+            or User.objects.filter(username__iexact=identifier).first()
+        )
+        username = matched_user.get_username() if matched_user else identifier
         user = authenticate(username=username, password=password)
         if not user:
             raise serializers.ValidationError("Invalid email or password.")
