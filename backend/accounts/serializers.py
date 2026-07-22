@@ -123,7 +123,14 @@ class SigninSerializer(serializers.Serializer):
     def validate(self, attrs):
         email = attrs.get("email", "").lower()
         password = attrs.get("password")
-        user = authenticate(username=email, password=password)
+
+        try:
+            matched_user = User.objects.get(email__iexact=email)
+        except User.DoesNotExist:
+            matched_user = None
+
+        username = matched_user.get_username() if matched_user else email
+        user = authenticate(username=username, password=password)
         if not user:
             raise serializers.ValidationError("Invalid email or password.")
         attrs["user"] = user

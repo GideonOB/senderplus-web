@@ -150,6 +150,32 @@ class AccountsApiTests(TestCase):
         self.assertEqual(trusted_signin.status_code, 200)
         self.assertIn("token", trusted_signin.data)
 
+    def test_signin_accepts_email_for_staff_user_with_different_username(self):
+        user = self.user_model.objects.create_user(
+            username="admin-user",
+            email="admin@example.com",
+            password="securepass123",
+            is_staff=True,
+            is_superuser=True,
+        )
+
+        signin_response = self.client.post(
+            "/auth/signin",
+            {
+                "email": "admin@example.com",
+                "password": "securepass123",
+                "device_id": "admin-device",
+            },
+        )
+
+        self.assertEqual(signin_response.status_code, 200)
+        self.assertTrue(signin_response.data["requires_otp"])
+        self.assertTrue(
+            EmailVerificationCode.objects.filter(
+                user=user, purpose=EmailVerificationCode.PURPOSE_SIGNIN_DEVICE
+            ).exists()
+        )
+
     def test_password_change_requires_code(self):
         user = self.user_model.objects.create_user(
             username="user2@example.com",
