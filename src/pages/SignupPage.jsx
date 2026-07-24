@@ -27,6 +27,7 @@ const SignupPage = () => {
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
+    username: "",
     gender: "male",
     phone_number: "",
     street: "",
@@ -66,6 +67,7 @@ const SignupPage = () => {
     }
   };
 
+  const usernameError = fieldErrors.username || "";
   const emailError = fieldErrors.email || "";
   const phoneError = fieldErrors.phone_number || "";
   const passwordError = fieldErrors.password || "";
@@ -86,8 +88,9 @@ const SignupPage = () => {
         {error && (
           <div className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
             {error}
-            {(emailError || phoneError || passwordError) && (
+            {(usernameError || emailError || phoneError || passwordError) && (
               <ul className="mt-2 list-disc pl-5 text-xs text-rose-800/90">
+                {usernameError && <li>Username issue: {usernameError}</li>}
                 {emailError && <li>Email issue: {emailError}</li>}
                 {phoneError && <li>Phone issue: {phoneError}</li>}
                 {passwordError && <li>Password issue: {passwordError}</li>}
@@ -119,6 +122,22 @@ const SignupPage = () => {
               <option value="male">Male</option>
               <option value="female">Female</option>
             </select>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="username">
+              Username
+            </label>
+            <input
+              id="username"
+              className="auth-input"
+              name="username"
+              placeholder="Choose a username"
+              value={form.username}
+              onChange={onChange}
+              required
+            />
+            {usernameError && <p className="mt-1 text-xs text-rose-600">{usernameError}</p>}
           </div>
 
           <div className="md:col-span-2">

@@ -1,6 +1,7 @@
 // src/pages/SubmitSuccessPage.jsx
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import SettingsMenu from "../components/SettingsMenu";
 
 const SubmitSuccessPage = () => {
     const navigate = useNavigate();
@@ -17,6 +18,7 @@ const SubmitSuccessPage = () => {
                 fromSubmit: true,
             },
         });
+    const goAccount = () => navigate("/profile");
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col pb-16">
@@ -32,6 +34,7 @@ const SubmitSuccessPage = () => {
                             Sender+
                         </span>
                     </button>
+                    <SettingsMenu />
                 </div>
             </header>
 
@@ -119,9 +122,7 @@ const SubmitSuccessPage = () => {
                     {/* My Account (placeholder) */}
                     <button
                         type="button"
-                        onClick={() =>
-                            alert("My Account (demo) – coming soon.")
-                        }
+                        onClick={goAccount}
                         className="flex flex-col items-center text-xs font-medium text-gray-500 hover:text-[#73C2FB]"
                     >
                         <span className="text-lg">👤</span>

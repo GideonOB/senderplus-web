@@ -1,15 +1,14 @@
 // src/pages/SupportPage.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import SettingsMenu from "../components/SettingsMenu";
 
 const SupportPage = () => {
     const navigate = useNavigate();
 
     const goHome = () => navigate("/home");
     const goTrack = () => navigate("/track");
-    const goAccount = () => {
-        alert("My Account (demo) – coming soon.");
-    };
+    const goAccount = () => navigate("/profile");
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col pb-16">
@@ -24,9 +23,10 @@ const SupportPage = () => {
                             Sender+
                         </span>
                     </button>
-                    <span className="text-xs text-gray-500">
-                        Customer Support
-                    </span>
+                    <div className="flex items-center gap-3">
+                        <span className="hidden text-xs text-gray-500 sm:inline">Customer Support</span>
+                        <SettingsMenu />
+                    </div>
                 </div>
             </header>
 
@@ -36,9 +36,8 @@ const SupportPage = () => {
                         We’re here to help
                     </h2>
                     <p className="text-sm text-gray-600 mb-4">
-                        For demo purposes, these are sample support channels. In a live
-                        deployment, Sender+ will offer WhatsApp, in-app chat, and phone
-                        support for students and families.
+                        Contact Sender+ support for help with package submissions,
+                        tracking updates, account access, or delivery questions.
                     </p>
 
                     <div className="space-y-4 text-sm">

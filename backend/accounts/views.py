@@ -81,6 +81,7 @@ class SigninView(APIView):
                 {
                     "message": "Verification code sent for this new browser/device.",
                     "requires_otp": True,
+                    "email": user.email,
                     "challenge_token": challenge_token,
                     "purpose": EmailVerificationCode.PURPOSE_SIGNIN_DEVICE,
                 },

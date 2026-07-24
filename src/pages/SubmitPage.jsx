@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { API_BASE_URL } from "../api";
+import SettingsMenu from "../components/SettingsMenu";
 
 // Helper: format phone as (000) 000-0000 and strip non-digits
 const formatPhoneNumber = (value) => {
@@ -155,6 +156,7 @@ const SubmitPage = () => {
             <button type="button" onClick={goTrack} className="plush-nav-link">
               Track
             </button>
+            <SettingsMenu />
           </nav>
         </div>
       </header>

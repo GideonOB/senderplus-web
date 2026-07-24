@@ -3,9 +3,9 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../authContext";
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, isDemoMode } = useAuth();
+  const { isAuthenticated } = useAuth();
 
-  if (isAuthenticated || isDemoMode) {
+  if (isAuthenticated) {
     return children;
   }
 
