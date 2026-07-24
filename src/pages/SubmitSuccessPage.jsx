@@ -1,6 +1,7 @@
 // src/pages/SubmitSuccessPage.jsx
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import SettingsMenu from "../components/SettingsMenu";
 
 const SubmitSuccessPage = () => {
     const navigate = useNavigate();
@@ -33,6 +34,7 @@ const SubmitSuccessPage = () => {
                             Sender+
                         </span>
                     </button>
+                    <SettingsMenu />
                 </div>
             </header>
 

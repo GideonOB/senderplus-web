@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import { API_BASE_URL, apiFetch } from "../api";
 import { useAuth } from "../authContext";
+import SettingsMenu from "../components/SettingsMenu";
 
 const STATUS_STEPS = [
   "Waiting for package to reach bus station",
@@ -116,6 +117,7 @@ const TrackPage = () => {
               Home
             </button>
             <span className="rounded-full bg-sky-100 px-3 py-1 font-semibold text-sky-700">Track</span>
+            <SettingsMenu />
           </nav>
         </div>
       </header>

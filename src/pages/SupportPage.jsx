@@ -1,6 +1,7 @@
 // src/pages/SupportPage.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import SettingsMenu from "../components/SettingsMenu";
 
 const SupportPage = () => {
     const navigate = useNavigate();
@@ -22,9 +23,10 @@ const SupportPage = () => {
                             Sender+
                         </span>
                     </button>
-                    <span className="text-xs text-gray-500">
-                        Customer Support
-                    </span>
+                    <div className="flex items-center gap-3">
+                        <span className="hidden text-xs text-gray-500 sm:inline">Customer Support</span>
+                        <SettingsMenu />
+                    </div>
                 </div>
             </header>
 
