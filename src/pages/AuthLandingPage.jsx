@@ -1,29 +1,23 @@
 // src/pages/AuthLandingPage.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../authContext";
+import SettingsMenu from "../components/SettingsMenu";
 
 const AuthLandingPage = () => {
     const navigate = useNavigate();
-    const { setDemoMode } = useAuth();
-
     const handleLogin = () => {
-        setDemoMode(false);
         navigate("/login");
     };
 
     const handleSignUp = () => {
-        setDemoMode(false);
         navigate("/signup");
     };
 
-    const handleSkip = () => {
-        setDemoMode(true);
-        navigate("/home");
-    };
-
     return (
-        <div className="min-h-screen bg-gradient-to-b from-[#73C2FB] to-[#7E191B] flex items-center justify-center px-4">
+        <div className="relative min-h-screen bg-gradient-to-b from-[#73C2FB] to-[#7E191B] flex items-center justify-center px-4">
+            <div className="absolute right-4 top-4">
+                <SettingsMenu showLogout={false} />
+            </div>
             <div className="w-full max-w-md bg-white/10 backdrop-blur-md rounded-2xl shadow-xl p-8 text-center text-white">
                 <div className="mb-6">
                     <img
@@ -53,16 +47,6 @@ const AuthLandingPage = () => {
                         className="w-full border border-white/80 text-white font-semibold py-2.5 rounded-full hover:bg-white/10 transition"
                     >
                         Sign Up
-                    </button>
-                </div>
-
-                <div className="mt-6">
-                    <button
-                        type="button"
-                        onClick={handleSkip}
-                        className="text-xs text-white/80 underline underline-offset-4 hover:text-white"
-                    >
-                        Skip (demo)
                     </button>
                 </div>
             </div>

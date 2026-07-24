@@ -4,6 +4,7 @@ import { useAuth } from "../authContext";
 import { apiFetch } from "../api";
 import femaleAvatar from "../assets/avatar2.png";
 import maleAvatar from "../assets/avatar1.png";
+import SettingsMenu from "../components/SettingsMenu";
 
 const GHANA_REGIONS = [
   "Ahafo",
@@ -289,9 +290,12 @@ const ProfilePage = () => {
               <p className="mt-1 text-sm text-slate-500">{addressText}</p>
             </div>
           </div>
-          <button type="button" onClick={() => navigate("/home")} className="text-sm font-medium text-slate-600 underline underline-offset-4 transition hover:text-slate-900">
-            Back home
-          </button>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => navigate("/home")} className="text-sm font-medium text-slate-600 underline underline-offset-4 transition hover:text-slate-900">
+              Back home
+            </button>
+            <SettingsMenu />
+          </div>
         </div>
 
         {message && <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</div>}
