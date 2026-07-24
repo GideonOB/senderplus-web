@@ -177,7 +177,7 @@ html[data-theme="forest"] .auth-input {
 }
 
 .plush-nav {
-  @apply relative z-10 rounded-2xl border border-white/60 bg-white/75 shadow-lg backdrop-blur-xl;
+  @apply relative z-30 rounded-2xl border border-white/60 bg-white/75 shadow-lg backdrop-blur-xl;
 }
 
 .plush-nav-link {
