@@ -26,9 +26,12 @@ html[data-theme="dark"] {
 
 html[data-theme="forest"] {
   --app-bg: #e8f5e9;
-  --app-text: #1b4332;
+  --app-text: #16382b;
   --card-bg: #f1faee;
-  --muted-text: #2d6a4f;
+  --heading-text: #0b2e22;
+  --body-text: #24513e;
+  --muted-text: #47725f;
+  --subtle-text: #4f7462;
   --border-color: #95d5b2;
 }
 
@@ -52,13 +55,40 @@ html[data-theme="dark"] .text-gray-900,
 html[data-theme="dark"] .text-gray-800,
 html[data-theme="dark"] .text-gray-700,
 html[data-theme="dark"] .text-gray-600,
-html[data-theme="dark"] .text-gray-500,
-html[data-theme="forest"] .text-gray-900,
-html[data-theme="forest"] .text-gray-800,
-html[data-theme="forest"] .text-gray-700,
-html[data-theme="forest"] .text-gray-600,
-html[data-theme="forest"] .text-gray-500 {
+html[data-theme="dark"] .text-gray-500 {
   color: var(--app-text) !important;
+}
+
+/* Keep forest typography dark and varied instead of flattening every label to
+   the same light foreground colour. This also covers the newer slate palette. */
+html[data-theme="forest"] .text-gray-900,
+html[data-theme="forest"] .text-slate-900,
+html[data-theme="forest"] .text-gray-800,
+html[data-theme="forest"] .text-slate-800 {
+  color: var(--heading-text) !important;
+}
+
+html[data-theme="forest"] .text-gray-700,
+html[data-theme="forest"] .text-slate-700,
+html[data-theme="forest"] .text-gray-600,
+html[data-theme="forest"] .text-slate-600 {
+  color: var(--body-text) !important;
+}
+
+html[data-theme="forest"] .text-gray-500,
+html[data-theme="forest"] .text-slate-500 {
+  color: var(--muted-text) !important;
+}
+
+html[data-theme="forest"] .text-gray-400,
+html[data-theme="forest"] .text-slate-400 {
+  color: var(--subtle-text) !important;
+}
+
+html[data-theme="forest"] input::placeholder,
+html[data-theme="forest"] textarea::placeholder {
+  color: var(--subtle-text);
+  opacity: 1;
 }
 
 html[data-theme="dark"] .border-gray-100,
