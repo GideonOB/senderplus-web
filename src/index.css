@@ -113,6 +113,27 @@ html[data-theme="forest"] .bg-gradient-to-b {
   background-color: var(--app-bg) !important;
 }
 
+/* The welcome card uses white type over the light theme's gradient. Give that
+   same content an explicit, readable treatment on the pale forest canvas. */
+html[data-theme="forest"] .welcome-card {
+  background-color: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  border: 1px solid var(--border-color);
+  color: var(--heading-text);
+}
+
+html[data-theme="forest"] .welcome-tagline {
+  color: var(--muted-text);
+}
+
+html[data-theme="forest"] .welcome-secondary-button {
+  border-color: var(--body-text);
+  color: var(--body-text);
+}
+
+html[data-theme="forest"] .welcome-secondary-button:hover {
+  background-color: color-mix(in srgb, var(--card-bg) 55%, #95d5b2 45%);
+}
+
 /* Auth pages visual refresh */
 .auth-shell {
   @apply relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8;

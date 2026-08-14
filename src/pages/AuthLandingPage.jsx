@@ -18,7 +18,7 @@ const AuthLandingPage = () => {
             <div className="absolute right-4 top-4">
                 <SettingsMenu showLogout={false} />
             </div>
-            <div className="w-full max-w-md bg-white/10 backdrop-blur-md rounded-2xl shadow-xl p-8 text-center text-white">
+            <div className="welcome-card w-full max-w-md bg-white/10 backdrop-blur-md rounded-2xl shadow-xl p-8 text-center text-white">
                 <div className="mb-6">
                     <img
                         src="/senderplus-logo.png"
@@ -28,7 +28,7 @@ const AuthLandingPage = () => {
                     <h1 className="text-2xl font-bold tracking-wide">
                         Welcome to Sender+
                     </h1>
-                    <p className="text-sm text-white/80 mt-1">
+                    <p className="welcome-tagline text-sm text-white/80 mt-1">
                         Bridging Ghana One Package at a Time.
                     </p>
                 </div>
@@ -44,7 +44,7 @@ const AuthLandingPage = () => {
                     <button
                         type="button"
                         onClick={handleSignUp}
-                        className="w-full border border-white/80 text-white font-semibold py-2.5 rounded-full hover:bg-white/10 transition"
+                        className="welcome-secondary-button w-full border border-white/80 text-white font-semibold py-2.5 rounded-full hover:bg-white/10 transition"
                     >
                         Sign Up
                     </button>
