@@ -1,82 +1,114 @@
-# 🔗 Live App
+# SenderPlus
 
-**The SenderPlus MVP is available here:**
+SenderPlus is a package delivery web application that lets customers create an
+account, submit a delivery request, and follow a package from dispatch to
+delivery. It combines a responsive React interface with a Django REST API for
+authentication, customer profiles, and package management.
 
-👉 **https://senderplus.netlify.app/**
+## Live application
 
-Start at this link to sign in, submit packages, and track deliveries through the connected SenderPlus backend.
+The SenderPlus MVP is available at
+[senderplus.netlify.app](https://senderplus.netlify.app/).
 
----
+## Features
 
-## Environment configuration (Render + frontend)
+- Account registration, sign-in, and confirmation flows
+- Protected customer dashboard and profile management
+- Package submission with sender, recipient, and delivery details
+- Delivery tracking with a visual status timeline
+- Support page for customer assistance
+- Light, dark, and forest display themes
+- Responsive layouts for desktop and mobile devices
 
-SenderPlus now expects environment variables for production-grade configuration. No sensitive defaults should be hard-coded.
+## Technology
 
-### Backend (Render service)
-Set these in Render for the Django API service:
+### Frontend
 
-- `SECRET_KEY` (required)
-- `DEBUG` (`False` in production)
-- `ALLOWED_HOSTS` (comma-separated hostnames)
-- `DATABASE_URL` (Render Postgres connection string)
-- `CORS_ALLOWED_ORIGINS` (comma-separated full origins)
-- `CSRF_TRUSTED_ORIGINS` (comma-separated full origins)
-- `CORS_ALLOW_ALL_ORIGINS` (`False` in production)
-- `SESSION_COOKIE_SECURE` (`True` in production)
-- `CSRF_COOKIE_SECURE` (`True` in production)
-- `CLOUDINARY_CLOUD_NAME`
-- `CLOUDINARY_API_KEY`
-- `CLOUDINARY_API_SECRET`
-- (optional) `EMAIL_BACKEND`
-- (optional) `DEFAULT_FROM_EMAIL`
+- React 18
+- React Router
+- Tailwind CSS
+- Vite
 
-Use `backend/.env.example` as the template.
+### Backend
 
-> Note: backend settings now normalize common formatting mistakes:
-> - `ALLOWED_HOSTS` can be entered as hostnames or full URLs (e.g. both `senderplus-django-api.onrender.com` and `https://senderplus-django-api.onrender.com` are accepted).
-> - `CORS_ALLOWED_ORIGINS` / `CSRF_TRUSTED_ORIGINS` will ignore trailing slashes.
+- Django 5
+- Django REST Framework
+- PostgreSQL-compatible database configuration
+- Cloudinary-backed media storage
 
-### Frontend (Netlify/Vite)
-Set this in your frontend host:
-
-- `VITE_API_BASE_URL` (e.g., `https://senderplus-django-api.onrender.com`)
-
-Use `.env.example` as the template.
-
-
-### Troubleshooting: Render build fails during `python manage.py migrate` with `failed to resolve host`
-If the Render build log fails at the migrate step with an error like:
+## Repository structure
 
 ```text
-django.db.utils.OperationalError: failed to resolve host 'dpg-...-a': [Errno -2] Name or service not known
+senderplus-web/
+├── public/                 # Public frontend assets
+├── src/
+│   ├── components/         # Shared React components
+│   ├── pages/              # Route-level application screens
+│   ├── App.jsx             # Routes and application providers
+│   ├── api.js              # Frontend API client
+│   └── index.css           # Global styles and themes
+└── backend/
+    ├── accounts/           # Authentication and profile API
+    ├── packages/           # Package submission and tracking API
+    └── senderplus_core/    # Django project configuration
 ```
 
-Django installed successfully, but the build container could not resolve the PostgreSQL host from `DATABASE_URL`. On Render, hostnames ending in `-a` are typically internal database hostnames, and they only resolve from Render services in the same private network/region as the database. Check that the Django API service is using the correct Render Postgres **Internal Database URL** for a database attached to that service, or switch to the database **External Database URL** if the service cannot access the private hostname. Also verify the database still exists and that the `DATABASE_URL` value was not copied from an old/deleted database.
+## Local development
 
-After updating `DATABASE_URL`, redeploy the backend service so the build command can complete `python manage.py migrate`.
+### Prerequisites
 
-### Troubleshooting: signup/signin returns HTML `Bad Request (400)`
-If the browser network response body is an HTML page like:
+- Node.js 18 or later
+- npm
+- Python 3.10 or later
 
-```html
-<!doctype html>
-<title>Bad Request (400)</title>
+### Frontend
+
+```bash
+npm install
+npm run dev
 ```
 
-the request reached Django, but Django rejected it before your API view ran. In production, the most common cause is backend environment config:
+Vite will print the local URL after the development server starts.
 
-- `ALLOWED_HOSTS` must include your Render backend hostname (e.g. `senderplus-django-api.onrender.com`)
-- `CORS_ALLOWED_ORIGINS` must include your frontend origin (e.g. `https://senderplus.netlify.app`)
-- `CSRF_TRUSTED_ORIGINS` must include your frontend origin (e.g. `https://senderplus.netlify.app`)
+### Backend
 
-After updating env vars on Render, redeploy the backend service.
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
 
----
+Configuration templates are provided in `.env.example` and
+`backend/.env.example` for connecting the frontend and API in a local or hosted
+environment.
 
-## CI / automation note
+## Quality checks
 
-This repository does not use GitHub Actions. Run checks locally before pushing changes:
+Run the frontend checks from the repository root:
 
-- `npm run lint`
-- `npm run build`
-- `npm run quality-gate` (runs lint, build, and backend auth tests)
+```bash
+npm run lint
+npm run build
+```
+
+To run the combined frontend and backend verification suite:
+
+```bash
+npm run quality-gate
+```
+
+## Main application routes
+
+| Route | Purpose |
+| --- | --- |
+| `/` | Product and authentication landing page |
+| `/signup` | Create a customer account |
+| `/login` | Sign in to an existing account |
+| `/home` | View the authenticated dashboard |
+| `/submit` | Create a package delivery request |
+| `/track` | Review package progress |
+| `/profile` | Manage customer details |
+| `/support` | Access customer support |
