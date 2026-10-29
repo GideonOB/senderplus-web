@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../authContext";
+import { getSafeNextPath } from "../authRedirect";
 
 const CODE_LENGTH = 6;
 
@@ -111,7 +112,7 @@ const ConfirmCodePage = () => {
         return;
       }
 
-      navigate("/home");
+      navigate(getSafeNextPath(location.state?.next), { replace: true });
     } catch (err) {
       setError(err.message || "Code verification failed.");
     } finally {

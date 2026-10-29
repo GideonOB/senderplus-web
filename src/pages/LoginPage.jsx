@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../authContext";
+import { getSafeNextPath } from "../authRedirect";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const next = getSafeNextPath(searchParams.get("next"));
   const { signin } = useAuth();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -22,11 +25,12 @@ const LoginPage = () => {
             email: data.email || identifier,
             purpose: "signin_device",
             challenge_token: data.challenge_token,
+            next,
           },
         });
         return;
       }
-      navigate("/home");
+      navigate(next, { replace: true });
     } catch (err) {
       setError(err.message || "Sign in failed.");
     } finally {
@@ -94,7 +98,7 @@ const LoginPage = () => {
 
         <p className="mt-5 text-sm text-slate-600">
           New here?{" "}
-          <Link to="/signup" className="font-semibold text-sky-600 transition hover:text-sky-500">
+          <Link to={`/signup?next=${encodeURIComponent(next)}`} className="font-semibold text-sky-600 transition hover:text-sky-500">
             Create an account
           </Link>
         </p>
