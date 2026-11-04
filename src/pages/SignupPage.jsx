@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../authContext";
+import { getSafeNextPath } from "../authRedirect";
 
 const SignupPage = () => {
   const GHANA_REGIONS = [
@@ -23,6 +24,8 @@ const SignupPage = () => {
   ];
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const next = getSafeNextPath(searchParams.get("next"));
   const { signup } = useAuth();
   const [form, setForm] = useState({
     first_name: "",
@@ -57,6 +60,7 @@ const SignupPage = () => {
         state: {
           email: form.email,
           purpose: "signup",
+          next,
         },
       });
     } catch (err) {
@@ -220,7 +224,7 @@ const SignupPage = () => {
 
         <p className="mt-5 text-sm text-slate-600">
           Already have an account?{" "}
-          <Link to="/login" className="font-semibold text-sky-600 transition hover:text-sky-500">
+          <Link to={`/login?next=${encodeURIComponent(next)}`} className="font-semibold text-sky-600 transition hover:text-sky-500">
             Log in
           </Link>
         </p>
