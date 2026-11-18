@@ -1,114 +1,98 @@
-# SenderPlus
+# SenderPlus platform
 
-SenderPlus is a package delivery web application that lets customers create an
-account, submit a delivery request, and follow a package from dispatch to
-delivery. It combines a responsive React interface with a Django REST API for
-authentication, customer profiles, and package management.
+SenderPlus connects customer delivery requests, courier work, and staff operations
+through one Django API. This repository is an npm workspace monorepo for the
+clients, with the Python backend maintained alongside them.
 
-## Live application
+The existing customer app is live at [senderplus.netlify.app](https://senderplus.netlify.app/).
+The driver and operations folders are reserved for upcoming builds; they do not
+contain working apps yet.
 
-The SenderPlus MVP is available at
-[senderplus.netlify.app](https://senderplus.netlify.app/).
+## Layout
 
-## Features
+| Path | Responsibility | State |
+| --- | --- | --- |
+| `apps/customer-web/` | Existing React/Vite customer app, assets, tests, and web tooling | Working app |
+| `apps/driver-mobile/` | Expo/React Native driver app | Planned |
+| `apps/operations-web/` | Staff dispatch and management dashboard | Planned |
+| `backend/` | Shared Django REST API, models, permissions, and migrations | Working API |
+| `packages/` | Future reusable client libraries and API contracts | Reserved |
+| `scripts/` | Repository development and verification commands | Tooling |
+| `docs/` | Architecture, deployment guidance, and historical assessments | Documentation |
 
-- Account registration, sign-in, and confirmation flows
-- Protected customer dashboard and profile management
-- Package submission with sender, recipient, and delivery details
-- Delivery tracking with a visual status timeline
-- Support page for customer assistance
-- Light, dark, and forest display themes
-- Responsive layouts for desktop and mobile devices
+Each client owns its dependencies and environment configuration. Install JavaScript
+dependencies once, from the repository root, using the single `package-lock.json`.
+The existing customer UI and Django API behavior are preserved by this layout change.
 
-## Technology
+## Local setup
 
-### Frontend
+Use Node.js 22.12 or newer (Node 22 is selected by `.nvmrc`), npm 10 or newer,
+and Python 3.12, the version used by CI.
 
-- React 18
-- React Router
-- Tailwind CSS
-- Vite
-
-### Backend
-
-- Django 5
-- Django REST Framework
-- PostgreSQL-compatible database configuration
-- Cloudinary-backed media storage
-
-## Repository structure
-
-```text
-senderplus-web/
-├── public/                 # Public frontend assets
-├── src/
-│   ├── components/         # Shared React components
-│   ├── pages/              # Route-level application screens
-│   ├── App.jsx             # Routes and application providers
-│   ├── api.js              # Frontend API client
-│   └── index.css           # Global styles and themes
-└── backend/
-    ├── accounts/           # Authentication and profile API
-    ├── packages/           # Package submission and tracking API
-    └── senderplus_core/    # Django project configuration
-```
-
-## Local development
-
-### Prerequisites
-
-- Node.js 18 or later
-- npm
-- Python 3.10 or later
-
-### Frontend
+### Customer app
 
 ```bash
-npm install
+npm ci
+cp apps/customer-web/.env.example apps/customer-web/.env
 npm run dev
 ```
 
-Vite will print the local URL after the development server starts.
+Use your platform's file-copy command on Windows. Set `VITE_API_BASE_URL` in that
+app's `.env` to the desired API, for example `http://127.0.0.1:8000` for local Django.
+The example retains the existing hosted API URL. If you already have a frontend
+`.env` or `.env.local` at the repository root, move it into `apps/customer-web/`.
+Never place backend credentials in a Vite environment variable.
 
-### Backend
+### Shared API
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r backend/requirements.txt
+cp backend/.env.example backend/.env
+```
+
+On Windows, activate with `.venv\Scripts\Activate.ps1` in PowerShell.
+For local development, edit `backend/.env`: set a local `SECRET_KEY`, `DEBUG=True`,
+`ALLOWED_HOSTS=localhost,127.0.0.1`, and leave `DATABASE_URL` empty to use SQLite.
+Set both secure-cookie flags to `False` for local HTTP. Keep local Vite in
+`CORS_ALLOWED_ORIGINS`. Hosted environments continue to use Render PostgreSQL.
 
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```
 
-Configuration templates are provided in `.env.example` and
-`backend/.env.example` for connecting the frontend and API in a local or hosted
-environment.
+## Commands
 
-## Quality checks
+Run these from the repository root. Activate the Python environment before running
+backend tests or the full quality gate.
 
-Run the frontend checks from the repository root:
-
-```bash
-npm run lint
-npm run build
-```
-
-To run the combined frontend and backend verification suite:
-
-```bash
-npm run quality-gate
-```
-
-## Main application routes
-
-| Route | Purpose |
+| Command | Action |
 | --- | --- |
-| `/` | Product and authentication landing page |
-| `/signup` | Create a customer account |
-| `/login` | Sign in to an existing account |
-| `/home` | View the authenticated dashboard |
-| `/submit` | Create a package delivery request |
-| `/track` | Review package progress |
-| `/profile` | Manage customer details |
-| `/support` | Access customer support |
+| `npm run dev` / `npm run dev:customer` | Start the customer app |
+| `npm run build` / `npm run build:customer` | Build the customer app into root `dist/` |
+| `npm run preview` | Preview that customer build |
+| `npm run lint` | Lint configured client workspaces |
+| `npm run test:customer` | Run customer authentication redirect tests |
+| `npm run test:backend` | Run Django tests using a local SQLite test database and in-memory email |
+| `npm test` | Run both test suites |
+| `npm run quality-gate` | Lint, run both test suites, and build the customer app |
+
+`npm run build` intentionally builds only the customer site. A future driver
+release or operations deployment will have its own command and release process.
+GitHub Actions runs the frontend checks and Django tests on pull requests and
+pushes to `main`.
+
+## Current behavior and next stages
+
+The customer app supports registration and sign-in, profiles, package submission,
+tracking, support, and display themes. Existing Django token authentication and
+Cloudinary integration are still present. Supabase Auth/Storage, Django business
+roles, driver workflows, dispatch, maps, messaging, and offline synchronization
+are subsequent implementation stages.
+
+- [Architecture and app boundaries](docs/architecture.md)
+- [Deployment and environment locations](docs/deployment.md)
+- [Historical repository evaluation](docs/archive/REPOSITORY_EVALUATION.md)
