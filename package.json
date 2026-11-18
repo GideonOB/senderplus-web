@@ -1,33 +1,24 @@
 {
-  "name": "senderplus-web",
+  "name": "senderplus",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "engines": {
+    "node": ">=22.12.0",
+    "npm": ">=10"
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "quality-gate": "npm run lint && npm run build && (cd backend && SECRET_KEY=test DEBUG=true python manage.py test accounts -v 1)"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.23.0"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "@types/react": "^19.2.5",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
-    "autoprefixer": "^10.4.22",
-    "eslint": "^9.39.1",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.24",
-    "globals": "^16.5.0",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.14",
-    "vite": "npm:rolldown-vite@7.2.5"
+    "dev": "npm run dev --workspace=@senderplus/customer-web --",
+    "dev:customer": "npm run dev --workspace=@senderplus/customer-web --",
+    "build": "npm run build:customer",
+    "build:customer": "npm run build --workspace=@senderplus/customer-web",
+    "lint": "npm run lint --workspaces --if-present",
+    "preview": "npm run preview --workspace=@senderplus/customer-web --",
+    "test": "npm run test:customer && npm run test:backend",
+    "test:customer": "npm run test --workspace=@senderplus/customer-web",
+    "test:backend": "python scripts/test_backend.py",
+    "quality-gate": "npm run lint && npm test && npm run build"
   },
   "overrides": {
     "vite": "npm:rolldown-vite@7.2.5"
