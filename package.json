@@ -17,6 +17,7 @@
     "preview": "npm run preview --workspace=@senderplus/customer-web --",
     "test": "npm run test:customer && npm run test:backend",
     "test:customer": "npm run test --workspace=@senderplus/customer-web",
+    "test:auth-browser": "npm run test:auth-browser --workspace=@senderplus/customer-web --",
     "test:backend": "python scripts/test_backend.py",
     "quality-gate": "npm run lint && npm test && npm run build"
   },

@@ -169,9 +169,23 @@ EMAIL_BACKEND = os.getenv(
 )
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@senderplus.app")
 
+SUPABASE_AUTH_ENABLED = env_bool("SUPABASE_AUTH_ENABLED", False)
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().rstrip("/")
+SUPABASE_PUBLISHABLE_KEY = os.getenv("SUPABASE_PUBLISHABLE_KEY", "").strip()
+if SUPABASE_AUTH_ENABLED:
+    supabase_origin = urlsplit(SUPABASE_URL)
+    if (supabase_origin.scheme != "https" or not supabase_origin.hostname
+            or supabase_origin.username or supabase_origin.password
+            or supabase_origin.path or supabase_origin.query or supabase_origin.fragment
+            or not SUPABASE_PUBLISHABLE_KEY.startswith("sb_publishable_")):
+        raise ImproperlyConfigured(
+            "Supabase auth requires an HTTPS SUPABASE_URL origin and SUPABASE_PUBLISHABLE_KEY."
+        )
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication",
+        "accounts.supabase_auth.SupabaseAuthentication",
+        "accounts.supabase_auth.LegacyTokenAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_RENDERER_CLASSES": [

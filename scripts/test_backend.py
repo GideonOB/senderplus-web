@@ -16,6 +16,9 @@ env = {
     "CLOUDINARY_CLOUD_NAME": "",
     "CLOUDINARY_API_KEY": "",
     "CLOUDINARY_API_SECRET": "",
+    "SUPABASE_AUTH_ENABLED": "false",
+    "SUPABASE_URL": "",
+    "SUPABASE_PUBLISHABLE_KEY": "",
 }
 
 result = subprocess.run(

@@ -26,7 +26,7 @@ const SignupPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const next = getSafeNextPath(searchParams.get("next"));
-  const { signup } = useAuth();
+  const { signup, provider } = useAuth();
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
@@ -55,7 +55,11 @@ const SignupPage = () => {
     setError("");
     setFieldErrors({});
     try {
-      await signup(form);
+      const result = await signup(form, next);
+      if (provider === "supabase" && !result.requires_confirmation) {
+        navigate(next, { replace: true });
+        return;
+      }
       navigate("/confirm", {
         state: {
           email: form.email,
@@ -108,14 +112,14 @@ const SignupPage = () => {
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="first_name">
               First name
             </label>
-            <input id="first_name" className="auth-input" name="first_name" placeholder="Ada" value={form.first_name} onChange={onChange} required />
+            <input id="first_name" maxLength={150} className="auth-input" name="first_name" placeholder="Ada" value={form.first_name} onChange={onChange} required />
           </div>
 
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="last_name">
               Last name
             </label>
-            <input id="last_name" className="auth-input" name="last_name" placeholder="Lovelace" value={form.last_name} onChange={onChange} required />
+            <input id="last_name" maxLength={150} className="auth-input" name="last_name" placeholder="Lovelace" value={form.last_name} onChange={onChange} required />
           </div>
 
           <div className="md:col-span-2">
@@ -128,7 +132,7 @@ const SignupPage = () => {
             </select>
           </div>
 
-          <div className="md:col-span-2">
+          {provider !== "supabase" && <div className="md:col-span-2">
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="username">
               Username
             </label>
@@ -142,7 +146,7 @@ const SignupPage = () => {
               required
             />
             {usernameError && <p className="mt-1 text-xs text-rose-600">{usernameError}</p>}
-          </div>
+          </div>}
 
           <div className="md:col-span-2">
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="phone_number">
@@ -150,6 +154,9 @@ const SignupPage = () => {
             </label>
             <input
               id="phone_number"
+              pattern="(\+233|0)[0-9]{9}"
+              title="Use a Ghana phone number such as 0241234567 or +233241234567"
+              maxLength={13}
               className="auth-input"
               name="phone_number"
               placeholder="0241234567 or +233241234567"
@@ -164,14 +171,14 @@ const SignupPage = () => {
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="street">
               Street address
             </label>
-            <input id="street" className="auth-input" name="street" placeholder="House number, street name, landmark" value={form.street} onChange={onChange} required />
+            <input id="street" maxLength={255} className="auth-input" name="street" placeholder="House number, street name, landmark" value={form.street} onChange={onChange} required />
           </div>
 
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="city">
               Town / City
             </label>
-            <input id="city" className="auth-input" name="city" placeholder="e.g. Kumasi" value={form.city} onChange={onChange} required />
+            <input id="city" maxLength={120} className="auth-input" name="city" placeholder="e.g. Kumasi" value={form.city} onChange={onChange} required />
           </div>
 
           <div>
@@ -193,6 +200,7 @@ const SignupPage = () => {
             </label>
             <input
               id="ghana_post_gps"
+              maxLength={40}
               className="auth-input"
               name="ghana_post_gps"
               placeholder="e.g. GA-123-4567"
@@ -213,7 +221,7 @@ const SignupPage = () => {
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="password">
               Password
             </label>
-            <input id="password" className="auth-input" type="password" name="password" placeholder="Minimum 8 characters" value={form.password} onChange={onChange} required />
+            <input id="password" minLength={8} autoComplete="new-password" className="auth-input" type="password" name="password" placeholder="Minimum 8 characters" value={form.password} onChange={onChange} required />
             {passwordError && <p className="mt-1 text-xs text-rose-600">{passwordError}</p>}
           </div>
 

@@ -1,10 +1,13 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../authContext";
+import SessionStatus from "./SessionStatus";
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading, error } = useAuth();
   const location = useLocation();
+
+  if (isLoading || error) return <SessionStatus />;
 
   if (isAuthenticated) {
     return children;

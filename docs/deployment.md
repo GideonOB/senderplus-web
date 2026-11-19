@@ -28,10 +28,11 @@ a separate build/release process. The root default build will remain customer-on
 ## Django on Render
 
 Keep the existing `senderplus-django-api` service rooted at `backend/`. Existing
-requirements, build/start commands, environment variables, and database connection
-remain applicable because backend source paths and behavior are unchanged.
-This stage creates no Render resources, changes no live configuration, and runs
-no production database migrations. Do not create a second API for each client.
+service paths and database connection remain applicable. The authentication phase
+adds dependencies, an additive Django migration and opt-in environment variables;
+follow [authentication.md](authentication.md) before deployment. No live configuration
+or production data has been changed during implementation. Do not create a second
+API for each client.
 
 ## Environment file locations
 
@@ -44,8 +45,9 @@ no production database migrations. Do not create a second API for each client.
 Move any existing local frontend `.env*` files from root to `apps/customer-web/`.
 Hosted environment variables are still inherited by the workspace build command.
 Backend secrets must never appear in client environment files or public bundles.
-Supabase variables will be added when its project and integration are configured;
-there are no placeholder secrets or unused Supabase variables in this change.
+The example files include Supabase variables for the staged authentication rollout.
+Keep the frontend on `legacy` until the API and project are verified; the backend
+Supabase authentication switch also defaults to disabled.
 
 ## Verification
 
