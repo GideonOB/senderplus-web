@@ -33,4 +33,8 @@ export default [
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true, allowExportNames: ['useAuth', 'useTheme'] }],
     },
   },
+  {
+    files: ['**/*.cjs'],
+    languageOptions: { globals: globals.node },
+  },
 ]

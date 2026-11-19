@@ -28,7 +28,7 @@ const GHANA_REGIONS = [
 const ProfilePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { token, profile, refreshProfile, sendCode, changePassword } = useAuth();
+  const { token, profile, refreshProfile, sendCode, changePassword, provider } = useAuth();
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
@@ -205,7 +205,7 @@ const ProfilePage = () => {
 
     try {
       await sendCode({ purpose: "password_change" });
-      setPasswordMessage("Password change code sent. Check backend logs/email.");
+      setPasswordMessage("Password change code sent. Check your email.");
     } catch (err) {
       setPasswordError(err.message || "Failed to send code.");
     } finally {
@@ -490,8 +490,8 @@ const ProfilePage = () => {
                 name="code"
                 value={passwordForm.code}
                 onChange={onPasswordFieldChange}
-                placeholder="6-digit verification code"
-                maxLength={6}
+                placeholder="Verification code from your email"
+                maxLength={provider === "supabase" ? 10 : 6}
                 required
               />
             </div>

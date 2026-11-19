@@ -3,7 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.validators import RegexValidator
 from rest_framework import serializers
 
-from .models import CustomerProfile, EmailVerificationCode
+from .models import CustomerProfile, EmailVerificationCode, UserRole
 
 User = get_user_model()
 
@@ -33,6 +33,7 @@ GHANA_REGIONS = [
 
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
+    roles = serializers.SerializerMethodField()
     first_name = serializers.CharField(source="user.first_name", required=False)
     last_name = serializers.CharField(source="user.last_name", required=False)
     username = serializers.CharField(source="user.username", read_only=True)
@@ -42,6 +43,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerProfile
         fields = [
+            "roles",
             "first_name",
             "last_name",
             "username",
@@ -57,6 +59,9 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             "email_verified",
         ]
         read_only_fields = ["email_verified"]
+
+    def get_roles(self, instance):
+        return list(instance.user.senderplus_roles.order_by("role").values_list("role", flat=True))
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop("user", {})
@@ -123,6 +128,7 @@ class SignupSerializer(serializers.Serializer):
             ghana_post_gps=validated_data.get("ghana_post_gps", ""),
             address=f'{validated_data["street"]}, {validated_data["city"]}, {validated_data["region"]}',
         )
+        UserRole.objects.get_or_create(user=user, role=UserRole.Role.CUSTOMER)
         return user
 
 

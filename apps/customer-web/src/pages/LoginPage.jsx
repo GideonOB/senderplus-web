@@ -7,7 +7,8 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const next = getSafeNextPath(searchParams.get("next"));
-  const { signin } = useAuth();
+  const { signin, provider } = useAuth();
+  const usesSupabase = provider === "supabase";
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -54,22 +55,23 @@ const LoginPage = () => {
         {error && (
           <div className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
             {error}
-            <p className="mt-2 text-xs text-rose-800/90">
+            {!usesSupabase && <p className="mt-2 text-xs text-rose-800/90">
               Tip: if this is your first login on this browser, complete email code verification after submitting.
-            </p>
+            </p>}
           </div>
         )}
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-500" htmlFor="identifier">
-              Username or email
+              {usesSupabase ? "Email" : "Username or email"}
             </label>
             <input
               id="identifier"
               className="auth-input"
-              type="text"
-              placeholder="username or name@example.com"
+              type={usesSupabase ? "email" : "text"}
+              autoComplete="username"
+              placeholder={usesSupabase ? "name@example.com" : "username or name@example.com"}
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               required
@@ -84,6 +86,7 @@ const LoginPage = () => {
               id="password"
               className="auth-input"
               type="password"
+              autoComplete="current-password"
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

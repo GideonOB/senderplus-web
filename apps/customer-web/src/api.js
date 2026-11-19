@@ -1,3 +1,6 @@
+import { AUTH_PROVIDER } from "./auth/config";
+import { getSupabaseClient } from "./auth/supabaseClient";
+
 const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 if (!rawApiBaseUrl) {
@@ -14,7 +17,15 @@ export const apiFetch = async (path, options = {}, token = null) => {
   };
 
   if (token) {
-    headers.Authorization = `Token ${token}`;
+    if (AUTH_PROVIDER === "supabase") {
+      // Ask the SDK for a current session; component state can hold an older token.
+      const { data, error } = await getSupabaseClient().auth.getSession();
+      if (error) throw error;
+      if (!data.session) throw new Error("Please sign in again.");
+      headers.Authorization = `Bearer ${data.session.access_token}`;
+    } else {
+      headers.Authorization = `Token ${token}`;
+    }
   }
 
   const response = await fetch(`${API_BASE_URL}${normalizedPath}`, {
