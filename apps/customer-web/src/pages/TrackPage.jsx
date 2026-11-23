@@ -81,7 +81,7 @@ const TrackPage = () => {
         const txt = await res.text();
         console.error("Advance status error:", res.status, txt);
         if (res.status === 401 || res.status === 403) {
-          throw new Error("Only admin users can advance package status. Please log in with an admin account.");
+          throw new Error("Your account does not have permission to update this delivery.");
         }
         throw new Error("Could not advance package status.");
       }

@@ -13,6 +13,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import ProfilePage from "./pages/ProfilePage";
+import AuthCallbackPage from "./pages/AuthCallbackPage";
+import EmailConfirmationPage from "./pages/EmailConfirmationPage";
+import { AUTH_PROVIDER } from "./auth/config";
 
 function App() {
   return (
@@ -23,7 +26,8 @@ function App() {
             <Route path="/" element={<AuthLandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
-            <Route path="/confirm" element={<ConfirmCodePage />} />
+            <Route path="/confirm" element={AUTH_PROVIDER === "supabase" ? <EmailConfirmationPage /> : <ConfirmCodePage />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
             <Route
               path="/home"

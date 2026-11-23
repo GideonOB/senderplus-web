@@ -3,6 +3,7 @@ from rest_framework import permissions, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from accounts.permissions import CanManageDeliveries
 
 from .models import Package
 from .serializers import PackageCreateSerializer, PackageDetailSerializer
@@ -35,7 +36,7 @@ class TrackPackageView(APIView):
 
 
 class AdvanceStatusView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [CanManageDeliveries]
 
     def post(self, request, tracking_id: str):
         package = get_object_or_404(Package, tracking_id=tracking_id)

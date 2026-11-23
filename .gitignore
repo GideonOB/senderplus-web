@@ -32,6 +32,8 @@ htmlcov/
 .expo/
 .netlify/
 coverage/
+test-results/
+playwright-report/
 *.tsbuildinfo
 
 # Editor directories and files

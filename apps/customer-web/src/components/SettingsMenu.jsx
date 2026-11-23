@@ -15,6 +15,7 @@ const SettingsMenu = ({ showLogout = true }) => {
   const { logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -26,9 +27,14 @@ const SettingsMenu = ({ showLogout = true }) => {
     return () => document.removeEventListener("mousedown", closeOnOutsideClick);
   }, [isOpen]);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      setLogoutError("");
+      await logout();
+      navigate("/login");
+    } catch {
+      setLogoutError("Could not sign out. Please reconnect and try again.");
+    }
   };
 
   return (
@@ -71,6 +77,7 @@ const SettingsMenu = ({ showLogout = true }) => {
               </button>
             </>
           )}
+          {logoutError && <p role="alert" className="mt-2 text-xs text-rose-700">{logoutError}</p>}
         </div>
       )}
     </div>

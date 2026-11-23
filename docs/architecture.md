@@ -16,7 +16,7 @@ reserved for actual shared libraries as those apps are built.
 | Driver client | Expo/React Native with local persistence and queued synchronization |
 | Staff client | Separate operations web dashboard |
 | API and business data | Shared Django REST API and Render PostgreSQL |
-| Identity | Supabase Auth, to be integrated |
+| Identity | Supabase Auth integration behind an opt-in rollout switch |
 | Authorization | Django-enforced customer, driver, and staff permissions |
 | Photos and voice | Private Supabase Storage; existing Cloudinary assets need no migration |
 | Supabase organization | Dedicated Senderplus organization, one project for Auth and Storage |
@@ -43,8 +43,8 @@ The GhanaPostGPS wrapper still needs validation before production reliance.
 
 ## Next implementation stages
 
-1. Integrate identity and Django role/permission boundaries with compatibility for
-   the existing customer flow.
+1. Verify and activate the identity/role integration using [authentication.md](authentication.md),
+   then complete account migration and staff authentication hardening.
 2. Integrate private media storage and remove Cloudinary code/dependencies.
 3. Define delivery assignments, allowed transitions, and audit/event history.
 4. Build driver and operations workflows against that API.

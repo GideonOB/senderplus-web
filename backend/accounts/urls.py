@@ -1,4 +1,5 @@
 from django.urls import path
+from .supabase_views import LinkSupabaseIdentityView, SupabaseSessionView
 
 from .views import (
     PasswordChangeView,
@@ -10,6 +11,8 @@ from .views import (
 )
 
 urlpatterns = [
+    path("session", SupabaseSessionView.as_view(), name="auth-session"),
+    path("link-supabase", LinkSupabaseIdentityView.as_view(), name="auth-link-supabase"),
     path("signup", SignupView.as_view(), name="auth-signup"),
     path("signin", SigninView.as_view(), name="auth-signin"),
     path("send-code", SendCodeView.as_view(), name="auth-send-code"),

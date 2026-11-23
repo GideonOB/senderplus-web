@@ -4,8 +4,9 @@ from rest_framework import permissions, status
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import PermissionDenied
 
-from .models import CustomerProfile, EmailVerificationCode, TrustedDevice
+from .models import CustomerProfile, EmailVerificationCode, SupabaseIdentity, TrustedDevice
 from .serializers import (
     CustomerProfileSerializer,
     PasswordChangeSerializer,
@@ -22,6 +23,11 @@ def _auth_payload(user):
         defaults={"phone_number": "0240000000", "address": ""},
     )
     return CustomerProfileSerializer(profile).data
+
+
+def _require_legacy_account(user):
+    if SupabaseIdentity.objects.filter(user=user).exists():
+        raise PermissionDenied("Use Supabase sign-in and password settings for this account.")
 
 
 def _send_verification_code(user, purpose, challenge_token=""):
@@ -64,6 +70,7 @@ class SigninView(APIView):
         serializer = SigninSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
+        _require_legacy_account(user)
         device_id = serializer.validated_data.get("device_id")
 
         trusted = False
@@ -108,6 +115,7 @@ class SendCodeView(APIView):
 
         purpose = serializer.validated_data["purpose"]
         user = serializer.validated_data["user"]
+        _require_legacy_account(user)
         challenge_token = ""
         if purpose == EmailVerificationCode.PURPOSE_SIGNIN_DEVICE:
             challenge_token = EmailVerificationCode.generate_challenge_token()
@@ -131,6 +139,7 @@ class VerifyCodeView(APIView):
         serializer.is_valid(raise_exception=True)
         verification = serializer.validated_data["verification"]
         user = serializer.validated_data["user"]
+        _require_legacy_account(user)
         purpose = serializer.validated_data["purpose"]
         device_id = serializer.validated_data.get("device_id")
 
@@ -177,6 +186,7 @@ class PasswordChangeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        _require_legacy_account(request.user)
         serializer = PasswordChangeSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         verification = serializer.validated_data["verification"]
