@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { getSafeNextPath } from '../src/authRedirect.js';
 
 describe('authentication destinations', () => {
-  for (const path of ['/submit', '/track', '/submit?example=value', '/track?ref=a%26b#status', '/home', '/profile', '/support', '/submit-success']) {
+  for (const path of ['/submit', '/track', '/submit?example=value', '/track?ref=a%26b#status', '/home', '/profile', '/support', '/submit-success', '/deliveries?page=2', '/deliveries/abcd1234?page=2']) {
     it(`preserves ${path}`, () => assert.equal(getSafeNextPath(path), path));
   }
-  for (const path of [undefined, null, '', 42, {}, 'https://evil.example', '//evil.example', 'javascript:alert(1)', '/\\evil.example', '/\nevil.example', '/\tevil.example', ' /submit', '/login', '/signup', '/confirm', '/', '/unknown', '/submit/../login', '/%2f%2fevil.example', '/submit%2f..%2flogin']) {
+  for (const path of [undefined, null, '', 42, {}, 'https://evil.example', '//evil.example', 'javascript:alert(1)', '/\\evil.example', '/\nevil.example', '/\tevil.example', ' /submit', '/login', '/signup', '/confirm', '/', '/unknown', '/submit/../login', '/%2f%2fevil.example', '/submit%2f..%2flogin', '/deliveries/../login', '/deliveries/%2E%2E', '/deliveries/abc%2Fdef']) {
     it(`falls back for ${JSON.stringify(path)}`, () => assert.equal(getSafeNextPath(path), '/home'));
   }
   it('preserves a destination through query encoding and confirmation state', () => {

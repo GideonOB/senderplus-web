@@ -34,6 +34,12 @@ follow [authentication.md](authentication.md) before deployment. No live configu
 or production data has been changed during implementation. Do not create a second
 API for each client.
 
+## Booking-account and tracking release
+
+Follow the [delivery rollout order](deliveries.md#release-order) for the additive
+migration and coordinated customer web/API release. Verify the signed-out tracking
+flow, private delivery routes and behavior with a cached older client bundle.
+
 ## Environment file locations
 
 | Consumer | Example | Local file |

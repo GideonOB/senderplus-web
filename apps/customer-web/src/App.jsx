@@ -5,6 +5,7 @@ import ConfirmCodePage from "./pages/ConfirmCodePage";
 import HomePage from "./pages/HomePage";
 import SubmitPage from "./pages/SubmitPage";
 import TrackPage from "./pages/TrackPage";
+import { DeliveryDetailPage, MyDeliveriesPage } from "./pages/MyDeliveriesPage";
 import SupportPage from "./pages/SupportPage";
 import SubmitSuccessPage from "./pages/SubmitSuccessPage";
 import { ThemeProvider } from "./themeContext";
@@ -53,11 +54,20 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/track" element={<TrackPage />} />
             <Route
-              path="/track"
+              path="/deliveries"
               element={
                 <ProtectedRoute>
-                  <TrackPage />
+                  <MyDeliveriesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/deliveries/:trackingId"
+              element={
+                <ProtectedRoute>
+                  <DeliveryDetailPage />
                 </ProtectedRoute>
               }
             />

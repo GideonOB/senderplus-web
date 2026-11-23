@@ -5,6 +5,7 @@ const DESTINATIONS = new Set([
   "/submit",
   "/submit-success",
   "/track",
+  "/deliveries",
   "/profile",
   "/support",
 ]);
@@ -20,5 +21,6 @@ export const getSafeNextPath = (next) => {
   }
 
   const pathname = next.split(/[?#]/, 1)[0];
-  return DESTINATIONS.has(pathname) ? next : "/home";
+  const isDeliveryDetail = /^\/deliveries\/[a-z0-9_-]{1,32}$/i.test(pathname);
+  return DESTINATIONS.has(pathname) || isDeliveryDetail ? next : "/home";
 };

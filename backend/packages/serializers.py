@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Package, STATUS_CHOICES
+
+from .models import Package
 
 
 class PackageCreateSerializer(serializers.ModelSerializer):
@@ -32,6 +33,29 @@ class PackageCreateSerializer(serializers.ModelSerializer):
         allow_null=True,
     )
     description = serializers.CharField(required=False, allow_blank=True)
+
+
+class PublicTrackingSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = Package
+        fields = ["tracking_id", "status", "status_display", "created_at", "updated_at"]
+
+
+class PackageSummarySerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = Package
+        fields = [
+            "tracking_id",
+            "package_name",
+            "status",
+            "status_display",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class PackageDetailSerializer(serializers.ModelSerializer):

@@ -23,6 +23,15 @@ class Package(models.Model):
     tracking_id = models.CharField(
         max_length=32, unique=True, editable=False, db_index=True
     )
+    # The booking account does not establish legal ownership of the parcel.
+    booked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="booked_packages",
+    )
 
     # Sender
     sender_name = models.CharField(max_length=255)
