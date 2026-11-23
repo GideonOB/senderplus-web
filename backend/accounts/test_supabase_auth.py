@@ -10,6 +10,7 @@ from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
+from django.urls import reverse
 import jwt
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient, APIRequestFactory
@@ -154,6 +155,32 @@ class SupabaseAuthTests(TestCase):
         self.assertEqual(response.data["roles"], ["customer"])
         self.assertFalse(User.objects.get().is_staff)
         self.assertTrue(User.objects.get().customer_profile.email_verified)
+
+    def test_supabase_identity_can_book_and_read_its_delivery(self):
+        self.assertEqual(self.bootstrap().status_code, 200)
+        booking = self.client.post("/submit-package", {
+            "sender_name": "Ama",
+            "sender_phone": "0241234567",
+            "sender_address": "Accra",
+            "recipient_name": "Kofi",
+            "recipient_phone": "0247654321",
+            "recipient_address": "Kumasi",
+            "package_name": "Book",
+            "package_type": "Document",
+            "weight": "1.5",
+        }, format="multipart")
+
+        self.assertEqual(booking.status_code, 200)
+        tracking_id = booking.json()["tracking_id"]
+        package = Package.objects.get(tracking_id=tracking_id)
+        self.assertEqual(package.booked_by_id, SupabaseIdentity.objects.get().user_id)
+
+        listing = self.client.get(reverse("my-deliveries"))
+        self.assertEqual(listing.status_code, 200)
+        self.assertEqual([row["tracking_id"] for row in listing.json()["results"]], [tracking_id])
+        detail = self.client.get(reverse("my-delivery-detail", args=[tracking_id]))
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.json()["recipient_address"], "Kumasi")
 
     def test_role_changes_are_effective_without_reissuing_jwt(self):
         self.bootstrap()

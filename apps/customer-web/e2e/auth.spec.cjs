@@ -108,3 +108,209 @@ test('login, reload, password update, token refresh and logout protect customer 
   // A profile effect accidentally depending on its own response causes a fetch loop.
   expect(observed.bootstrapCount).toBeLessThan(20);
 });
+
+const apiOrigin = 'http://127.0.0.1:8000';
+const publicTracking = {
+  tracking_id: 'own12345',
+  status: 'en_route_campus',
+  status_display: 'Package in our van en route to campus',
+  created_at: '2026-11-19T12:00:00Z',
+  updated_at: '2026-11-20T12:00:00Z',
+};
+
+async function completeSignIn(page, next) {
+  await page.locator('#identifier').fill('ama@example.com');
+  await page.locator('#password').fill('TestPassword123!');
+  await page.getByRole('button', { name: 'Log In', exact: true }).click();
+  await expect(page).toHaveURL(next);
+}
+
+async function signIn(page) {
+  await page.goto('/login');
+  await completeSignIn(page, '/home');
+}
+
+async function mockTracking(context, body = publicTracking) {
+  await context.route(`${apiOrigin}/track/${publicTracking.tracking_id}`, async route => {
+    expect(route.request().headers()).not.toHaveProperty('authorization');
+    await route.fulfill({ json: body, headers: { 'access-control-allow-origin': '*' } });
+  });
+}
+
+async function trackFromForm(page) {
+  await page.getByRole('button', { name: 'Track Package', exact: true }).click();
+  const result = page.getByRole('region', { name: 'Tracking result' });
+  await expect(result.getByText(publicTracking.tracking_id, { exact: true })).toBeVisible();
+  await expect(result.locator('[aria-current=step]')).toContainText(publicTracking.status_display);
+  await expect(result.locator('time')).toHaveAttribute('datetime', publicTracking.updated_at);
+  await expect(result.getByText(/sender|recipient name|package photo|estimate/i)).toHaveCount(0);
+  return result;
+}
+
+test('guests can track a package and private delivery pages require sign-in', async ({ page, context }) => {
+  await mockServices(context);
+  await mockTracking(context);
+  await context.route(`${apiOrigin}/deliveries/own12345`, async route => {
+    const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' };
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 200, headers });
+    expect(route.request().headers().authorization).toMatch(/^Bearer /);
+    await route.fulfill({
+      json: { ...publicTracking, package_name: 'Booked parcel', weight: '2.00' },
+      headers,
+    });
+  });
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Track a package' }).click();
+  await page.getByLabel('Tracking ID').fill(publicTracking.tracking_id);
+  const result = await trackFromForm(page);
+  await expect(result.getByRole('button', { name: 'Advance Status' })).toHaveCount(0);
+
+  await page.goto('/deliveries');
+  await expect(page).toHaveURL(/\/login\?next=%2Fdeliveries$/);
+  await page.goto('/deliveries/own12345?page=2');
+  await expect(page).toHaveURL(/\/login\?next=%2Fdeliveries%2Fown12345%3Fpage%3D2$/);
+  await completeSignIn(page, '/deliveries/own12345?page=2');
+  await expect(page.getByRole('heading', { name: 'Booked parcel' })).toBeVisible();
+});
+
+test('booking sends the session and the success screen opens limited tracking', async ({ page, context }) => {
+  await mockServices(context);
+  // A staged frontend rollout may briefly encounter the earlier tracking payload.
+  const privateSender = 'Private sender';
+  await mockTracking(context, { ...publicTracking, sender_name: privateSender, photo_url: '/private.jpg' });
+  let bookingData;
+  await context.route(`${apiOrigin}/submit-package`, async route => {
+    const request = route.request();
+    const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' };
+    if (request.method() === 'OPTIONS') {
+      await route.fulfill({ status: 200, headers });
+      return;
+    }
+    expect(request.method()).toBe('POST');
+    expect(request.headers().authorization).toMatch(/^Bearer /);
+    expect(request.headers()['content-type']).toMatch(/^multipart\/form-data; boundary=/);
+    bookingData = request.postData();
+    await route.fulfill({ json: { tracking_id: publicTracking.tracking_id }, headers });
+  });
+
+  await signIn(page);
+  await page.getByRole('button', { name: 'Send a Package' }).click();
+  const form = {
+    senderName: 'Ama Boateng',
+    senderPhone: '0241234567',
+    senderEmail: 'ama@example.com',
+    senderAddress: '1 Main Street',
+    recipientName: 'Kojo',
+    recipientPhone: '0555555555',
+    recipientAddress: 'Campus Hall',
+    packageName: 'Books',
+    type: 'Box',
+    weight: '2',
+  };
+  for (const [name, value] of Object.entries(form)) {
+    await page.locator(`[name="${name}"]`).fill(value);
+  }
+  await page.getByRole('button', { name: 'Submit Package' }).click();
+  await expect(page).toHaveURL(/\/submit-success$/);
+  await expect(page.getByText(publicTracking.tracking_id, { exact: true })).toBeVisible();
+  expect(bookingData).toContain('name="sender_name"');
+  expect(bookingData).not.toContain('booked_by');
+
+  await page.getByRole('button', { name: 'Track this package' }).click();
+  await expect(page.getByLabel('Tracking ID')).toHaveValue(publicTracking.tracking_id);
+  const result = await trackFromForm(page);
+  await expect(result.getByText(privateSender)).toHaveCount(0);
+  await expect(result.getByRole('img')).toHaveCount(0);
+});
+
+test('My deliveries shows owned pages and details with loading, retry, empty and unavailable states', async ({ page, context }) => {
+  await mockServices(context);
+  const newest = { ...publicTracking, package_name: 'Newest package' };
+  const older = { ...publicTracking, tracking_id: 'own67890', package_name: 'Older package' };
+  const olderDetail = {
+    ...older,
+    sender_name: 'Ama Boateng',
+    recipient_name: 'Kojo',
+    recipient_address: 'Private campus address',
+    package_type: 'Box',
+    weight: '2.00',
+  };
+  const firstResponse = Promise.withResolvers();
+  let failList = true;
+  let failDetail = true;
+  let empty = false;
+
+  await context.route(`${apiOrigin}/deliveries**`, async route => {
+    const request = route.request();
+    const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' };
+    if (request.method() === 'OPTIONS') {
+      await route.fulfill({ status: 200, headers });
+      return;
+    }
+    expect(request.headers().authorization).toMatch(/^Bearer /);
+    const url = new URL(request.url());
+    if (url.pathname === '/deliveries') {
+      const secondPage = url.searchParams.get('page') === '2';
+      if (failList) {
+        await firstResponse.promise;
+        await route.fulfill({ status: 503, headers });
+        return;
+      }
+      const results = secondPage ? [older] : [
+        newest,
+        ...Array.from({ length: 19 }, (_, index) => ({
+          ...newest, tracking_id: `other${index}`, package_name: `Package ${index + 2}`,
+        })),
+      ];
+      await route.fulfill({
+        headers,
+        json: {
+          count: empty ? 0 : 21,
+          next: !empty && !secondPage ? `${apiOrigin}/deliveries?page=2` : null,
+          previous: !empty && secondPage ? `${apiOrigin}/deliveries` : null,
+          results: empty ? [] : results,
+        },
+      });
+    } else if (url.pathname === '/deliveries/own67890') {
+      if (failDetail) {
+        await route.fulfill({ status: 503, headers });
+        return;
+      }
+      await route.fulfill({ json: olderDetail, headers });
+    } else {
+      await route.fulfill({ status: 404, headers });
+    }
+  });
+
+  await signIn(page);
+  await page.getByRole('link', { name: 'My deliveries', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText('Loading deliveries…');
+  firstResponse.resolve();
+  await expect(page.getByRole('alert')).toContainText('Could not load your deliveries');
+  failList = false;
+  await page.getByRole('button', { name: 'Retry' }).click();
+  await expect(page.getByRole('heading', { name: 'Newest package' })).toBeVisible();
+  await expect(page.getByText(/older or guest bookings/i)).toBeVisible();
+
+  const pagination = page.getByRole('navigation', { name: 'Delivery pages' });
+  await pagination.getByRole('link', { name: 'Next' }).click();
+  await expect(page).toHaveURL(/\/deliveries\?page=2$/);
+  await expect(pagination).toContainText('Page 2');
+  await expect(page.getByRole('heading', { name: 'Newest package' })).toHaveCount(0);
+
+  await page.getByRole('link', { name: /Older package/ }).click();
+  await expect(page.getByRole('alert')).toContainText('Could not load the delivery details');
+  failDetail = false;
+  await page.getByRole('button', { name: 'Retry' }).click();
+  await expect(page.getByRole('heading', { name: 'Older package' })).toBeVisible();
+  await expect(page.getByText(olderDetail.recipient_address)).toBeVisible();
+  await page.getByRole('link', { name: 'Back to My deliveries' }).click();
+  await expect(pagination).toContainText('Page 2');
+
+  empty = true;
+  await pagination.getByRole('link', { name: 'Previous' }).click();
+  await expect(page.getByText('You don’t have any deliveries yet.')).toBeVisible();
+  await page.goto('/deliveries/another-code');
+  await expect(page.getByRole('alert')).toHaveText('Delivery not found.');
+  await expect(page.getByText(olderDetail.recipient_address)).toHaveCount(0);
+});

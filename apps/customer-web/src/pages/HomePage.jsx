@@ -1,6 +1,6 @@
 // src/pages/HomePage.jsx
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import SettingsMenu from "../components/SettingsMenu";
 
 const HomePage = () => {
@@ -129,6 +129,14 @@ const HomePage = () => {
                         <span className="text-lg">🔍</span>
                         <span>Track</span>
                     </button>
+
+                    <Link
+                        to="/deliveries"
+                        className="flex flex-col items-center text-xs font-medium text-gray-500 hover:text-[#73C2FB]"
+                    >
+                        <span className="text-lg" aria-hidden="true">📦</span>
+                        <span>My deliveries</span>
+                    </Link>
 
                     {/* My Account */}
                     <button

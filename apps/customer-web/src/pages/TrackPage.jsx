@@ -1,105 +1,80 @@
-// src/pages/TrackPage.jsx
-import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 
-import { API_BASE_URL, apiFetch } from "../api";
+import { apiFetch } from "../api";
 import { useAuth } from "../authContext";
 import SettingsMenu from "../components/SettingsMenu";
 
 const STATUS_STEPS = [
-  "Waiting for package to reach bus station",
-  "Package in our van en route to campus",
-  "Package at our campus hub",
-  "Package delivered to recipient",
+  ["waiting_bus", "Waiting for package to reach bus station"],
+  ["en_route_campus", "Package in our van en route to campus"],
+  ["at_campus_hub", "Package at our campus hub"],
+  ["delivered", "Package delivered to recipient"],
 ];
 
-const TrackPage = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { token } = useAuth();
+function trackingResult({ tracking_id, status, status_display, updated_at }) {
+  return { tracking_id, status, status_display, updated_at };
+}
 
-  const initialTrackingId = location.state?.trackingId || "";
-  const [trackingIdInput, setTrackingIdInput] = useState(initialTrackingId);
+const TrackPage = () => {
+  const location = useLocation();
+  const { isAuthenticated, token } = useAuth();
+  const homePath = isAuthenticated ? "/home" : "/";
+  const [trackingIdInput, setTrackingIdInput] = useState(location.state?.trackingId || "");
   const [pkg, setPkg] = useState(null);
   const [loading, setLoading] = useState(false);
   const [advancing, setAdvancing] = useState(false);
   const [error, setError] = useState("");
 
-  const goHome = () => navigate("/home");
-  const goAccount = () => navigate("/profile");
-
-  const handleFetch = async (id) => {
-    const trimmed = id.trim();
-    if (!trimmed) {
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const trackingId = trackingIdInput.trim();
+    setPkg(null);
+    if (!trackingId) {
       setError("Please enter a tracking ID.");
-      setPkg(null);
       return;
     }
 
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE_URL}/track/${trimmed}`);
-      if (!res.ok) {
-        if (res.status === 404) {
-          setPkg(null);
-          setError("We couldn’t find a package with that ID. Please confirm the code from the sender.");
-        } else {
-          const txt = await res.text();
-          console.error("Track error:", res.status, txt);
-          throw new Error("Failed to fetch package details.");
-        }
+      const response = await apiFetch(`/track/${encodeURIComponent(trackingId)}`);
+      if (response.status === 404) {
+        setError("We couldn’t find a package with that ID. Please confirm the code from the sender.");
         return;
       }
-      const data = await res.json();
-      setPkg(data);
-    } catch (err) {
-      console.error(err);
-      setPkg(null);
-      setError(err.message || "Something went wrong.");
+      if (!response.ok) throw new Error();
+      setPkg(trackingResult(await response.json()));
+    } catch {
+      setError("Could not check tracking. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    handleFetch(trackingIdInput);
-  };
-
   const handleAdvanceStatus = async () => {
-    if (!pkg?.tracking_id) return;
     setAdvancing(true);
     setError("");
     try {
-      const res = await apiFetch(
-        `/advance-status/${pkg.tracking_id}`,
+      const response = await apiFetch(
+        `/advance-status/${encodeURIComponent(pkg.tracking_id)}`,
         { method: "POST" },
         token
       );
-      if (!res.ok) {
-        const txt = await res.text();
-        console.error("Advance status error:", res.status, txt);
-        if (res.status === 401 || res.status === 403) {
-          throw new Error("Your account does not have permission to update this delivery.");
-        }
-        throw new Error("Could not advance package status.");
+      if (response.status === 401 || response.status === 403) {
+        setError("Your account does not have permission to update this delivery.");
+        return;
       }
-      const data = await res.json();
-      setPkg(data);
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Failed to update status.");
+      if (!response.ok) throw new Error();
+      setPkg(trackingResult(await response.json()));
+    } catch {
+      setError("Could not advance package status. Please try again.");
     } finally {
       setAdvancing(false);
     }
   };
 
-  const statusLabel = pkg?.status_display || pkg?.status || "";
-
-  const currentStatusIndex = pkg && STATUS_STEPS.includes(statusLabel) ? STATUS_STEPS.indexOf(statusLabel) : -1;
-
-  const imageUrl = pkg && pkg.photo_url ? (pkg.photo_url.startsWith("http") ? pkg.photo_url : `${API_BASE_URL}${pkg.photo_url}`) : null;
+  const currentStatusIndex = STATUS_STEPS.findIndex(([status]) => status === pkg?.status);
 
   return (
     <div className="plush-shell min-h-screen pb-20">
@@ -109,58 +84,57 @@ const TrackPage = () => {
 
       <header className="plush-nav mx-auto mt-4 max-w-6xl px-4 py-3 sm:px-5">
         <div className="flex items-center justify-between gap-3">
-          <button type="button" onClick={goHome} className="flex items-center gap-2">
-            <img src="/senderplus-logo.png" alt="Sender+ logo" className="h-8 w-auto" />
-          </button>
-          <nav className="flex gap-2 text-sm sm:gap-3">
-            <button type="button" onClick={goHome} className="plush-nav-link">
-              Home
-            </button>
-            <span className="rounded-full bg-sky-100 px-3 py-1 font-semibold text-sky-700">Track</span>
-            <SettingsMenu />
+          <Link to={homePath}>
+            <img src="/senderplus-logo.png" alt="Sender+ home" className="h-8 w-auto" />
+          </Link>
+          <nav className="flex gap-2 text-sm sm:gap-3" aria-label="Main navigation">
+            <Link to={homePath} className="plush-nav-link">Home</Link>
+            <span className="rounded-full bg-sky-100 px-3 py-1 font-semibold text-sky-700" aria-current="page">Track</span>
+            <SettingsMenu showLogout={isAuthenticated} />
           </nav>
         </div>
       </header>
 
-      <main className="mx-auto mt-4 flex w-full max-w-6xl justify-center px-4 sm:px-5">
-        <div className="w-full space-y-6">
-          <section className="plush-card p-6 md:p-8">
-            <p className="auth-kicker">Live tracking</p>
-            <h1 className="mb-2 text-3xl font-bold text-slate-900 md:text-4xl">Track a Package</h1>
-            <p className="mb-5 text-sm text-slate-600 md:text-base">
-              Enter the tracking ID and get a polished real-time view of where your shipment is in the Sender+ journey.
-            </p>
+      <main className="mx-auto mt-4 w-full max-w-6xl space-y-6 px-4 sm:px-5">
+        <section className="plush-card p-6 md:p-8">
+          <h1 className="mb-2 text-3xl font-bold text-slate-900 md:text-4xl">Track a Package</h1>
+          <p className="mb-5 text-sm text-slate-600 md:text-base">Enter your tracking ID to check the delivery status.</p>
 
-            <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3 md:flex-row md:items-center">
-              <input
-                type="text"
-                value={trackingIdInput}
-                onChange={(e) => setTrackingIdInput(e.target.value)}
-                placeholder="e.g., dbd92eb6"
-                className="auth-input flex-1"
-              />
-              <button type="submit" disabled={loading} className="auth-button inline-flex items-center justify-center gap-2 px-5 py-2.5">
-                <span>🔍</span>
-                <span>{loading ? "Checking..." : "Track Package"}</span>
-              </button>
-            </form>
+          <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-3 md:flex-row md:items-center">
+            <label htmlFor="tracking-id" className="sr-only">Tracking ID</label>
+            <input
+              id="tracking-id"
+              type="text"
+              value={trackingIdInput}
+              onChange={(event) => setTrackingIdInput(event.target.value)}
+              placeholder="e.g., dbd92eb6"
+              className="auth-input flex-1"
+            />
+            <button type="submit" disabled={loading || advancing} className="auth-button px-5 py-2.5">
+              {loading ? "Checking..." : "Track Package"}
+            </button>
+          </form>
 
-            {error && <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">{error}</div>}
-          </section>
+          {error && <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">{error}</p>}
+        </section>
 
-          {pkg && (
-            <section className="plush-card p-6 md:p-8">
-              <div className="mb-6 flex flex-col gap-3 border-b border-slate-200/80 pb-5 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <p className="plush-label mb-0.5">Tracking ID</p>
-                  <p className="font-mono text-sm font-semibold md:text-base">{pkg.tracking_id}</p>
-                </div>
-
-                <div className="flex flex-col items-start gap-2 md:items-end">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
-                    <span>📍</span>
-                    <span>{statusLabel}</span>
-                  </span>
+        {pkg && (
+          <section className="plush-card p-6 md:p-8" aria-label="Tracking result" aria-live="polite">
+            <div className="mb-6 flex flex-col gap-3 border-b border-slate-200/80 pb-5 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="plush-label mb-0.5">Tracking ID</p>
+                <p className="font-mono text-sm font-semibold md:text-base">{pkg.tracking_id}</p>
+              </div>
+              <div className="flex flex-col items-start gap-2 md:items-end">
+                <p className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
+                  {pkg.status_display || pkg.status}
+                </p>
+                {pkg.updated_at && (
+                  <p className="text-xs text-slate-600">
+                    Last updated <time dateTime={pkg.updated_at}>{new Date(pkg.updated_at).toLocaleString()}</time>
+                  </p>
+                )}
+                {isAuthenticated && (
                   <button
                     type="button"
                     onClick={handleAdvanceStatus}
@@ -169,110 +143,56 @@ const TrackPage = () => {
                   >
                     {advancing ? "Updating status..." : "Advance Status"}
                   </button>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <p className="plush-label mb-2">Journey Progress</p>
-                  <ol className="space-y-2">
-                    {STATUS_STEPS.map((step, index) => {
-                      const reached = index <= currentStatusIndex;
-                      return (
-                        <li key={step} className="flex items-start gap-3 text-sm">
-                          <div
-                            className={`mt-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 ${
-                              reached ? "border-sky-500 bg-sky-500" : "border-slate-300 bg-white"
-                            }`}
-                          >
-                            {reached && <span className="text-[10px] text-white">✓</span>}
-                          </div>
-                          <span className={reached ? "font-medium text-slate-900" : "text-slate-400"}>{step}</span>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
-                    <h3 className="mb-1 text-sm font-semibold text-slate-800">From (Sender)</h3>
-                    <p className="text-sm text-slate-700">
-                      {pkg.sender_name}
-                      {pkg.sender_phone && <span className="block text-xs text-slate-500">{pkg.sender_phone}</span>}
-                      {pkg.sender_address && <span className="block text-xs text-slate-500">{pkg.sender_address}</span>}
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-white/70 p-4">
-                    <h3 className="mb-1 text-sm font-semibold text-slate-800">To (Recipient)</h3>
-                    <p className="text-sm text-slate-700">
-                      {pkg.recipient_name}
-                      {pkg.recipient_phone && <span className="block text-xs text-slate-500">{pkg.recipient_phone}</span>}
-                      {pkg.recipient_address && <span className="block text-xs text-slate-500">{pkg.recipient_address}</span>}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 rounded-2xl border border-slate-200 bg-white/70 p-4 text-xs text-slate-700 md:grid-cols-4 md:text-sm">
-                  <div>
-                    <p className="plush-label">Package</p>
-                    <p className="font-medium">{pkg.package_name}</p>
-                  </div>
-                  <div>
-                    <p className="plush-label">Type</p>
-                    <p className="font-medium">{pkg.package_type}</p>
-                  </div>
-                  <div>
-                    <p className="plush-label">Weight</p>
-                    <p className="font-medium">{pkg.weight} kg</p>
-                  </div>
-                  {pkg.value !== null && (
-                    <div>
-                      <p className="plush-label">Value (est.)</p>
-                      <p className="font-medium">{pkg.value}</p>
-                    </div>
-                  )}
-                </div>
-
-                {imageUrl && (
-                  <div>
-                    <p className="plush-label mb-2">Package Photo</p>
-                    <div className="w-full max-w-md">
-                      <img src={imageUrl} alt="Uploaded package" className="max-h-64 w-full rounded-2xl border border-slate-200 object-cover" />
-                    </div>
-                  </div>
                 )}
               </div>
-            </section>
-          )}
-        </div>
+            </div>
+            <h2 className="plush-label mb-2">Journey Progress</h2>
+            <ol className="space-y-2">
+              {STATUS_STEPS.map(([status, step], index) => {
+                const reached = index <= currentStatusIndex;
+                return (
+                  <li key={status} aria-current={index === currentStatusIndex ? "step" : undefined} className="flex items-start gap-3 text-sm">
+                    <span aria-hidden="true" className={`mt-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 ${
+                      reached ? "border-sky-500 bg-sky-500 text-white" : "border-slate-300 bg-white"
+                    }`}>
+                      {reached && <span className="text-[10px]">✓</span>}
+                    </span>
+                    <span className={reached ? "font-medium text-slate-900" : "text-slate-600"}>{step}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        )}
       </main>
 
-      <nav className="plush-bottom-nav">
-        <div className="mx-auto flex max-w-md justify-around py-2">
-          <button
-            type="button"
-            onClick={goHome}
-            className="flex flex-col items-center text-xs font-medium text-slate-500 transition hover:text-sky-600"
-          >
-            <span className="text-lg">🏠</span>
-            <span>Home</span>
-          </button>
-
-          <div className="flex flex-col items-center text-xs font-semibold text-sky-600">
-            <span className="text-lg">🔍</span>
-            <span>Track</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={goAccount}
-            className="flex flex-col items-center text-xs font-medium text-slate-500 transition hover:text-sky-600"
-          >
-            <span className="text-lg">👤</span>
-            <span>My Account</span>
-          </button>
+      <nav className="plush-bottom-nav" aria-label="Quick navigation">
+        <div className="mx-auto flex max-w-md justify-around py-2 text-xs font-medium text-slate-600">
+          <Link className="flex flex-col items-center hover:text-sky-600" to={homePath}>
+            <span className="text-lg" aria-hidden="true">🏠</span>
+            Home
+          </Link>
+          <span aria-current="page" className="flex flex-col items-center font-semibold text-sky-600">
+            <span className="text-lg" aria-hidden="true">🔍</span>
+            Track
+          </span>
+          {isAuthenticated ? (
+            <>
+              <Link className="flex flex-col items-center hover:text-sky-600" to="/deliveries">
+                <span className="text-lg" aria-hidden="true">📦</span>
+                My deliveries
+              </Link>
+              <Link className="flex flex-col items-center hover:text-sky-600" to="/profile">
+                <span className="text-lg" aria-hidden="true">👤</span>
+                My Account
+              </Link>
+            </>
+          ) : (
+            <Link className="flex flex-col items-center hover:text-sky-600" to="/login">
+              <span className="text-lg" aria-hidden="true">👤</span>
+              Log in
+            </Link>
+          )}
         </div>
       </nav>
     </div>

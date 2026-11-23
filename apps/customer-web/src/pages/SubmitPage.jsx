@@ -2,7 +2,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { API_BASE_URL } from "../api";
+import { apiFetch } from "../api";
+import { useAuth } from "../authContext";
 import SettingsMenu from "../components/SettingsMenu";
 
 // Helper: format phone as (000) 000-0000 and strip non-digits
@@ -18,6 +19,7 @@ const formatPhoneNumber = (value) => {
 
 const SubmitPage = () => {
   const navigate = useNavigate();
+  const { token } = useAuth();
 
   const [formData, setFormData] = useState({
     senderName: "",
@@ -106,10 +108,10 @@ const SubmitPage = () => {
         data.append("photo", formData.photo);
       }
 
-      const response = await fetch(`${API_BASE_URL}/submit-package`, {
+      const response = await apiFetch("/submit-package", {
         method: "POST",
         body: data,
-      });
+      }, token);
 
       if (!response.ok) {
         const errorText = await response.text();

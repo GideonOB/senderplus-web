@@ -1,6 +1,6 @@
 # Sender+ product delivery roadmap
 
-Planning baseline: 23 November 2026. Reviewed against the source included in merged PR #50 (main commit 587e599). This is a proposed implementation sequence, not a claim that the features below exist.
+Planning baseline: 23 November 2026. Reviewed against the source included in merged PR #50 (main commit 587e599). Milestone 1 records the implementation status of the booking-account and tracking work. Later work remains planned.
 
 ## Outcome and release boundaries
 
@@ -12,7 +12,7 @@ Deliver three independently released clients using one Django API:
 
 Customer app-store releases are an explicit later milestone, not an automatic conversion of the existing React website. Share API contracts and business utilities; implement native screens separately where needed. Driver and customer mobile applications get separate app identifiers and releases in the same repository.
 
-## Verified starting point
+## Verified planning baseline (before milestone 1)
 
 - Customer React/Vite app exists under apps/customer-web, including submission, tracking, profile and authentication pages.
 - Driver and operations directories contain planning READMEs only.
@@ -34,24 +34,29 @@ Use Django as the authority for account roles, service-area scope, assignments a
 
 ## Milestones
 
-### 1. Secure delivery ownership and assignment foundation — start now
+### 1. Booking accounts and private delivery access
 
-Work:
-- Add nullable customer owner, delivery assignment records and assignment history.
-- Set owner from the authenticated request; do not accept client-supplied owner or role values.
-- Provide paginated customer-owned and driver-assigned delivery endpoints.
-- Allow authorized dispatchers/managers to assign only eligible active drivers; restrict ordinary users from assignment changes.
-- Scope list, detail and mutation requests consistently. On reassignment, remove the former driver's server access immediately.
-- Define explicit hub/service-area membership for operational access; a global admin is a deliberate exception. Avoid granting all staff unlimited dispatch powers by default.
-- Separate minimal public tracking from private detail. Public responses must exclude contacts, exact addresses, private photos/messages and driver location. Add throttling and stronger identifiers for new public tracking links.
-- Keep legacy unowned records available to authorized operations staff. Decide guest booking policy explicitly; any retained guest path needs abuse controls and a verified claim process.
+Implemented in the first delivery PR:
 
-Acceptance:
-- Customer A cannot list/read/change customer B's deliveries, even using a known ID.
-- Driver A cannot access driver B's assignment or assign themselves a delivery.
-- Reassignment and role/account revocation affect subsequent API access.
-- Public tracking returns only approved status information.
-- Tests cover unauthorized requests, legacy rows and migration compatibility.
+- Record the authenticated booking account in a nullable relationship. Keep pre-existing and guest deliveries unclaimed.
+- Add an account-scoped, paginated My deliveries list and private detail in the API and customer app.
+- Keep anonymous tracking available with only the tracking ID, status, display status and timestamps.
+- Preserve existing operations access. The driver role gives no additional access to the customer endpoints.
+- Cover booking, access isolation, pagination, public response fields and migration compatibility with local tests.
+
+Hosted verification is pending. Follow the [delivery API and release notes](deliveries.md)
+for rollout order, old customer bundles and guest booking behavior.
+
+Remaining assignment work:
+
+- Add assignment records, assignment history and paginated driver-assigned delivery endpoints.
+- Allow authorized dispatchers/managers to assign eligible active drivers. Scope list, detail and mutation requests consistently. Remove the former driver's access immediately upon reassignment.
+- Define explicit hub/service-area membership for operational access. A global admin is a deliberate exception.
+- Add throttling and stronger identifiers for new public tracking links. Revisit guest booking abuse controls and any future verified claim policy.
+
+Assignment acceptance: drivers cannot access another driver's assignment or assign
+themselves a delivery. Reassignment and role/account revocation affect subsequent
+API access.
 
 ### 2. Delivery lifecycle, custody and audit trail
 
@@ -70,8 +75,8 @@ Acceptance: duplicated requests create one event; competing updates cannot silen
 
 Customer:
 - Replace the largely promotional home screen with active deliveries, recent history and clear next actions.
-- Connect booking to ownership; show delivery detail and event timeline.
-- Add loading, empty, error and retry states, plus an account-linking explanation for existing users.
+- Add an event timeline to the existing private delivery detail.
+- Carry the existing loading, empty, error and retry states into the expanded workflow.
 
 Operations:
 - Initialize apps/operations-web with staff-only routing and independently scoped API access.
@@ -193,10 +198,15 @@ Acceptance: no known cross-account data access, no silent lost/duplicated status
 
 When Netlify access is restored: configure the already documented frontend variables, rebuild a test deployment and confirm the exact callback URL. Finish the Render auth switch only as part of the staged test. Current email testing can use the limited built-in Supabase sender; broader tester email delivery remains pending a suitable setup. Keep confirmation enabled.
 
-Later: provide Google Maps configuration/budget, verify GhanaPostGPS integration route, select launch payment approach, and arrange Ghana-based driver testers. None blocks milestone 1.
+Later: provide Google Maps configuration/budget, verify GhanaPostGPS integration route, select launch payment approach, and arrange Ghana-based driver testers. Local milestone 1 testing can proceed before those activities.
 
-## First implementation PR
+## Delivery implementation sequence
 
-Scope milestone 1 into a small reviewable foundation: owner relationship, assignment records, scoped list/detail APIs, assignment mutation permissions, minimal public tracking response, and tests. Add a service-area access model before granting non-admin staff broad access. Document compatibility for the existing tracking screen and unknown-owner packages. Do not include maps, storage migration, messaging or production auth activation in this PR.
+The first PR covers booking accounts, customer list and detail, and minimal
+public tracking. The [delivery API and release notes](deliveries.md) describe
+the rollout and verification still required.
 
-Follow with lifecycle/event/idempotency work, then the first three-client demonstration. Progress is measured by acceptance gates rather than a fixed finish-date promise. Calendar estimates should follow the first two milestones and confirmed launch scope.
+Follow with assignment authorization, lifecycle/event/idempotency work and the
+first three-client demonstration. Progress is measured by acceptance gates.
+Calendar estimates should follow the first two milestones and confirmed launch
+scope.

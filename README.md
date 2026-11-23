@@ -75,7 +75,7 @@ backend tests or the full quality gate.
 | `npm run build` / `npm run build:customer` | Build the customer app into root `dist/` |
 | `npm run preview` | Preview that customer build |
 | `npm run lint` | Lint configured client workspaces |
-| `npm run test:customer` | Run customer authentication redirect tests |
+| `npm run test:customer` | Run customer web unit tests |
 | `npm run test:backend` | Run Django tests using a local SQLite test database and in-memory email |
 | `npm test` | Run both test suites |
 | `npm run quality-gate` | Lint, run both test suites, and build the customer app |
@@ -88,11 +88,13 @@ pushes to `main`.
 ## Current behavior and next stages
 
 The customer app supports registration and sign-in, profiles, package submission,
-tracking, support, and display themes. Existing Django token authentication and
-Cloudinary integration are still present. Supabase Auth/Storage, Django business
-roles, driver workflows, dispatch, maps, messaging, and offline synchronization
-are subsequent implementation stages.
+public status tracking, private access to deliveries booked while signed in,
+support, and display themes. Django token authentication and Cloudinary integration
+remain available. The opt-in Supabase Auth and Django role integration is in place
+for staged testing. Hosted activation, Supabase Storage, driver workflows, dispatch,
+maps, messaging, and offline synchronization remain pending.
 
 - [Architecture and app boundaries](docs/architecture.md)
+- [Booking accounts, delivery endpoints and release order](docs/deliveries.md)
 - [Deployment and environment locations](docs/deployment.md)
 - [Historical repository evaluation](docs/archive/REPOSITORY_EVALUATION.md)

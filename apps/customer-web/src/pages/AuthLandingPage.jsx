@@ -1,6 +1,6 @@
 // src/pages/AuthLandingPage.jsx
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import SettingsMenu from "../components/SettingsMenu";
 
 const AuthLandingPage = () => {
@@ -48,6 +48,9 @@ const AuthLandingPage = () => {
                     >
                         Sign Up
                     </button>
+                    <Link to="/track" className="inline-block text-sm font-semibold underline">
+                        Track a package
+                    </Link>
                 </div>
             </div>
         </div>
